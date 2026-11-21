@@ -1,31 +1,9 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, DM_Sans, Red_Hat_Mono } from 'next/font/google';
 import './globals.css';
 import { AirquaProvider } from '@/context/AirquaContext';
 import { AuthProvider } from '@/context/AuthContext';
 import HeaderNav from '@/components/shared/HeaderNav';
 import FooterBar from '@/components/shared/FooterBar';
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-body',
-  display: 'swap',
-});
-
-const redHatMono = Red_Hat_Mono({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-mono',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'AIRQUA AI — Hyperlocal Air Quality & Persona Intelligence',
@@ -44,10 +22,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${plusJakartaSans.variable} ${dmSans.variable} ${redHatMono.variable}`}
-    >
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Red+Hat+Mono:wght@500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
         suppressHydrationWarning
         className="min-h-screen flex flex-col bg-surface text-on-surface font-body antialiased selection:bg-primary-container selection:text-on-primary-container"
