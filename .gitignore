@@ -36,3 +36,6 @@ yarn-error.log*
 .legacy_components/
 .legacy_hooks/
 .legacy_lib/
+
+.vercel
+.env*
