@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. User Root Document (/users/{userId})
+    // Stores user profile, active city preset, persona, AQI scale, and language preferences.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Subcollection: Saved Actions & Checklist (/users/{userId}/actions/{actionId})
+      match /actions/{actionId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Subcollection: Multimodal Room Scans & Simulation History (/users/{userId}/history/{historyId})
+      match /history/{historyId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Subcollection: Grounded AI Consultant Chat History (/users/{userId}/conversations/{conversationId})
+      match /conversations/{conversationId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Fallback recursive wildcard for any future subcollections under the user
+      match /{allChildren=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // 2. Public Read-Only Ambient Air Readings Cache & Benchmarks (/airReadings/{readingId})
+    // Can be read by any client (authenticated or guest), but only written by backend/admin
+    match /airReadings/{readingId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 3. Deny all other collections by default for zero-trust security
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

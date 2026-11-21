@@ -1,0 +1,6 @@
+{
+  "name": "AIRQUA AI",
+  "description": "Hyperlocal Indian air quality intelligence with 24-hour safe ventilation windows, Gemini Vision room & smog scan, what-if routine impact simulator, and grounded AI consultant.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

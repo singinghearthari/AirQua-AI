@@ -1,0 +1,1649 @@
+<!-- AIRQUA AI — Dashboard -->
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRQUA AI — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#0F766E',
+        'on-primary': '#FFFFFF',
+        'primary-container': '#CCFBF1',
+        'on-primary-container': '#003733',
+        'secondary': '#466460',
+        'on-secondary': '#FFFFFF',
+        'secondary-container': '#E2E8F0',
+        'on-secondary-container': '#0F172A',
+        'surface': '#F8FAFC',
+        'on-surface': '#0F172A',
+        'surface-container-lowest': '#FFFFFF',
+        'surface-container-low': '#F1F5F9',
+        'surface-container': '#E2E8F0',
+        'on-surface-variant': '#475569',
+        'outline': '#64748B',
+        'outline-variant': '#E2E8F0',
+        'error': '#BA1A1A',
+        'on-error': '#FFFFFF',
+        'error-container': '#FFDAD6',
+        'on-error-container': '#410002',
+        'aqi-good': '#006C4A',
+        'on-aqi-good': '#FFFFFF',
+        'aqi-good-container': '#D1FAE5',
+        'on-aqi-good-container': '#002114',
+        'aqi-moderate': '#904D00',
+        'on-aqi-moderate': '#FFFFFF',
+        'aqi-moderate-container': '#FEF3C7',
+        'on-aqi-moderate-container': '#2F1500',
+        'aqi-poor': '#A73A00',
+        'on-aqi-poor': '#FFFFFF',
+        'aqi-poor-container': '#FFEDD5',
+        'on-aqi-poor-container': '#370E00',
+        'aqi-severe': '#BF0715',
+        'on-aqi-severe': '#FFFFFF',
+        'aqi-severe-container': '#FEE2E2',
+        'on-aqi-severe-container': '#410002',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Inter"', 'sans-serif'],
+        'body': ['"Inter"', 'sans-serif'],
+        'label': ['"Inter"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-xl': ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '700' }],
+        'display-xl-mobile': ['32px', { lineHeight: '36px', letterSpacing: '-0.75px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.3px', fontWeight: '600' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '150ms',
+        'surface-enter': '200ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=Red+Hat+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex flex-col" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Shared Global Header -->
+    <header class="bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <!-- Top Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-outline-variant">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded bg-primary text-on-primary">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">air</span>
+              </span>
+              <span class="font-headline text-title-md text-on-surface tracking-tight" data-design-text-token="title-md">AIRQUA AI</span>
+            </div>
+            <span data-component-id="badge-numeric" data-component-type="badge" data-component-variant="numeric" role="status" class="inline-flex items-center rounded-full bg-primary-container px-2.5 py-0.5 text-on-primary-container">
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Guest Mode</span>
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- AQI Scale Segmented Toggle -->
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="AQI Scale">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-primary px-2.5 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">IN CPCB</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">US EPA</button>
+            </div>
+
+            <!-- Language Toggle -->
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="Language">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-surface-container-lowest px-2.5 py-1 font-label text-label-sm text-on-surface border border-outline-variant transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">EN</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">தமிழ்</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Strip -->
+        <div class="py-3 flex flex-col gap-2.5 border-b border-outline-variant">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <!-- Pan-India City Selector Pills -->
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Select Indian City">
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary px-3 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Delhi</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Noida</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Mumbai</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Kolkata</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Bengaluru</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Chennai</button>
+            </div>
+
+            <!-- City Search + GPS -->
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-56">
+                <span class="material-symbols-outlined text-[16px] text-outline absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+                <input type="search" aria-label="Search any Indian city" placeholder="Search any Indian city..." class="w-full rounded border border-outline-variant bg-surface pl-8 pr-3 py-1.5 font-body text-body-sm text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary">
+              </div>
+              <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Use current GPS location" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container-lowest text-on-surface-variant transition-colors duration-state-change ease-state-change hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">my_location</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Persona Switcher + Evaluator Preset -->
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Household Persona">
+              <span class="font-label text-label-sm text-on-surface-variant mr-1" data-design-text-token="label-sm">Persona:</span>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Daily Commuter</button>
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary-container border border-primary px-3 py-1 font-label text-label-sm text-on-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Family with Kids</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Senior Citizen</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Student / Sports</button>
+            </div>
+
+            <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-container/50 px-3 py-1 font-label text-label-sm text-on-primary-container hover:bg-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">bolt</span>
+              <span>Try: Delhi • Family</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Tab Navigation Bar -->
+        <nav aria-label="Primary sections">
+          <div data-component-id="tabs-with-icon" data-component-type="tabs" data-component-variant="with-icon">
+            <div role="tablist" aria-label="AIRQUA AI sections" class="flex items-center gap-6 overflow-x-auto">
+              <a role="tab" id="tab-dashboard" href="../dashboard/Dashboard.html" aria-selected="true" tabindex="0" class="inline-flex items-center gap-2 border-b-2 border-primary py-3 text-primary whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dashboard</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Dashboard</span>
+              </a>
+              <a role="tab" id="tab-room-scan" href="../room-scan/RoomScan.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">photo_camera</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Room Scan</span>
+              </a>
+              <a role="tab" id="tab-simulator" href="../what-if-simulator/WhatIfSimulator.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">tune</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">What-If Simulator</span>
+              </a>
+              <a role="tab" id="tab-consultant" href="../ai-consultant/AiConsultant.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">AI Consultant</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content: Dashboard -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+
+      <!-- Hero AQI Card -->
+      <section aria-labelledby="hero-aqi-heading">
+        <div data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 sm:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 id="hero-aqi-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Delhi — Air Quality Index</h1>
+              <span id="freshness-badge" data-component-id="badge-freshness" data-component-type="badge" data-component-variant="success" role="status" class="inline-flex items-center gap-1.5 rounded-full bg-aqi-good-container px-2.5 py-0.5 text-on-aqi-good-container">
+                <span id="freshness-dot" class="h-2 w-2 rounded-full bg-aqi-good" aria-hidden="true"></span>
+                <span id="freshness-text" class="font-mono text-mono-sm tabular-nums" data-design-text-token="mono-sm">Updated 8m ago • Fresh</span>
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-baseline gap-4">
+              <span class="font-mono text-display-xl-mobile md:text-display-xl text-on-surface tabular-nums" data-design-text-token="display-xl">268</span>
+              <span data-component-id="badge-aqi-poor" data-component-type="badge" data-component-variant="warning" role="status" class="inline-flex items-center gap-1.5 rounded-full bg-aqi-poor-container px-3 py-1 text-on-aqi-poor-container">
+                <span class="h-2 w-2 rounded-full bg-aqi-poor" aria-hidden="true"></span>
+                <span class="font-label text-label-md" data-design-text-token="label-md">Poor — Indian CPCB Scale</span>
+              </span>
+            </div>
+
+            <p class="font-body text-body-md text-on-surface-variant max-w-prose text-pretty" data-design-text-token="body-md">
+              Prolonged outdoor exertion may cause breathing discomfort for children and sensitive groups. Plan school and outdoor play around the afternoon dip.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 sm:min-w-[280px]">
+            <div class="rounded-md border border-outline-variant bg-surface p-3.5 flex flex-col gap-1">
+              <span class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Dominant Pollutant</span>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">PM2.5</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">118.4 µg/m³</span>
+            </div>
+            <div class="rounded-md border border-outline-variant bg-surface p-3.5 flex flex-col gap-1">
+              <span class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Data Provider</span>
+              <span class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">Open-Meteo Modelled</span>
+              <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Hourly CPCB blend</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 24-Hour Safe Window Strip -->
+      <section aria-labelledby="safe-window-heading">
+        <div data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 id="safe-window-heading" class="font-headline text-title-md text-on-surface" data-design-text-token="title-md">24-Hour Safe Window Strip</h2>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Hourly CPCB forecast from 00:00 to 23:00 IST</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-aqi-good-container px-3 py-1 font-label text-label-sm text-on-aqi-good-container" data-design-text-token="label-sm">
+                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">window</span>
+                Best to Ventilate: 2–4 PM
+              </span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-primary-container px-3 py-1 font-label text-label-sm text-on-primary-container" data-design-text-token="label-sm">
+                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">directions_walk</span>
+                Best Outdoor Window: 3–5 PM
+              </span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-aqi-severe-container px-3 py-1 font-label text-label-sm text-on-aqi-severe-container" data-design-text-token="label-sm">
+                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">warning</span>
+                Peak Smog: 6–8 AM
+              </span>
+            </div>
+          </div>
+
+          <!-- 24-hour color-coded horizontal bar -->
+          <div class="flex flex-col gap-1.5">
+            <div class="grid grid-cols-12 sm:grid-cols-24 gap-1" role="img" aria-label="24-hour AQI forecast strip showing peak smog 6 to 8 AM and safest window 2 to 5 PM">
+              <!-- 00-05: Poor/Severe -->
+              <div class="h-8 rounded-sm bg-aqi-poor" title="00:00 — AQI 275"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="01:00 — AQI 282"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="02:00 — AQI 290"></div>
+              <div class="h-8 rounded-sm bg-aqi-severe" title="03:00 — AQI 305"></div>
+              <div class="h-8 rounded-sm bg-aqi-severe" title="04:00 — AQI 312"></div>
+              <div class="h-8 rounded-sm bg-aqi-severe" title="05:00 — AQI 324"></div>
+              <!-- 06-08: Peak Smog -->
+              <div class="h-8 rounded-sm bg-aqi-severe ring-2 ring-on-surface" title="06:00 — Peak Smog AQI 342"></div>
+              <div class="h-8 rounded-sm bg-aqi-severe ring-2 ring-on-surface" title="07:00 — Peak Smog AQI 338"></div>
+              <div class="h-8 rounded-sm bg-aqi-severe ring-2 ring-on-surface" title="08:00 — Peak Smog AQI 315"></div>
+              <!-- 09-13: Poor to Moderate -->
+              <div class="h-8 rounded-sm bg-aqi-poor" title="09:00 — AQI 280"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="10:00 — AQI 248"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="11:00 — AQI 218"></div>
+              <div class="h-8 rounded-sm bg-aqi-moderate" title="12:00 — AQI 186"></div>
+              <div class="h-8 rounded-sm bg-aqi-moderate" title="13:00 — AQI 162"></div>
+              <!-- 14-17: Safe Window (2-5 PM) -->
+              <div class="h-8 rounded-sm bg-aqi-good ring-2 ring-primary" title="14:00 — Safe Window AQI 138"></div>
+              <div class="h-8 rounded-sm bg-aqi-good ring-2 ring-primary" title="15:00 — Safe Window AQI 124"></div>
+              <div class="h-8 rounded-sm bg-aqi-good ring-2 ring-primary" title="16:00 — Safe Window AQI 128"></div>
+              <div class="h-8 rounded-sm bg-aqi-moderate ring-2 ring-primary" title="17:00 — Safe Window AQI 145"></div>
+              <!-- 18-23: Evening rise -->
+              <div class="h-8 rounded-sm bg-aqi-moderate" title="18:00 — AQI 178"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="19:00 — AQI 214"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="20:00 — AQI 246"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="21:00 — AQI 262"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="22:00 — AQI 268"></div>
+              <div class="h-8 rounded-sm bg-aqi-poor" title="23:00 — AQI 272"></div>
+            </div>
+            <div class="flex items-center justify-between font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">
+              <span>12 AM</span>
+              <span>6 AM</span>
+              <span>12 PM</span>
+              <span>6 PM</span>
+              <span>11 PM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Morning / Afternoon / Evening Persona Planner -->
+      <section aria-labelledby="persona-planner-heading">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <h2 id="persona-planner-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Daily Routine Planner — Family with Kids</h2>
+          <span class="font-label text-label-sm text-primary" data-design-text-token="label-sm">Tailored Guidance</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          <!-- Morning -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="h-full rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col justify-between gap-3">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[20px] text-aqi-severe" aria-hidden="true">wb_twilight</span>
+                  <h3 class="font-headline text-title-md text-on-surface" data-design-text-token="title-md">Morning</h3>
+                </div>
+                <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">6 AM–12 PM</span>
+              </div>
+              <span class="inline-flex w-fit items-center rounded-full bg-aqi-severe-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-severe-container" data-design-text-token="label-sm">Peak Smog • Avoid Outdoors</span>
+              <p class="font-body text-body-md text-on-surface-variant text-pretty" data-design-text-token="body-md">
+                Keep bedroom and living-room windows sealed during school prep. Use N95/KF94 masks for kids waiting at bus stops.
+              </p>
+            </div>
+            <div class="pt-3 border-t border-outline-variant flex items-center gap-2 text-on-surface">
+              <span class="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">check_circle</span>
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Run purifier on Medium in kids&#39; room</span>
+            </div>
+          </article>
+
+          <!-- Afternoon -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="h-full rounded-lg border border-primary bg-surface-container-lowest p-5 flex flex-col justify-between gap-3">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[20px] text-aqi-good" aria-hidden="true">sunny</span>
+                  <h3 class="font-headline text-title-md text-on-surface" data-design-text-token="title-md">Afternoon</h3>
+                </div>
+                <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">12 PM–6 PM</span>
+              </div>
+              <span class="inline-flex w-fit items-center rounded-full bg-aqi-good-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-good-container" data-design-text-token="label-sm">Safest Window • Ventilate 2–4 PM</span>
+              <p class="font-body text-body-md text-on-surface-variant text-pretty" data-design-text-token="body-md">
+                Open cross-ventilation windows between 2–4 PM to flush indoor CO2 and cooking fumes. Schedule park play between 3–5 PM.
+              </p>
+            </div>
+            <div class="pt-3 border-t border-outline-variant flex items-center gap-2 text-on-surface">
+              <span class="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">check_circle</span>
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Best time for outdoor errands &amp; play</span>
+            </div>
+          </article>
+
+          <!-- Evening -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="h-full rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col justify-between gap-3">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[20px] text-aqi-poor" aria-hidden="true">nights_stay</span>
+                  <h3 class="font-headline text-title-md text-on-surface" data-design-text-token="title-md">Evening</h3>
+                </div>
+                <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">6 PM–11 PM</span>
+              </div>
+              <span class="inline-flex w-fit items-center rounded-full bg-aqi-poor-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-poor-container" data-design-text-token="label-sm">Inversion Traps Pollutants</span>
+              <p class="font-body text-body-md text-on-surface-variant text-pretty" data-design-text-token="body-md">
+                Close balcony doors by 5:30 PM as temperature drops. Switch on kitchen exhaust hood during dinner prep and wet-mop floors.
+              </p>
+            </div>
+            <div class="pt-3 border-t border-outline-variant flex items-center gap-2 text-on-surface">
+              <span class="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">check_circle</span>
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Avoid evening incense or agarbatti</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Multi-Pollutant Grid -->
+      <section aria-labelledby="pollutant-grid-heading">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <h2 id="pollutant-grid-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Multi-Pollutant Breakdown</h2>
+          <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">6 Tracked Pollutants</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-stretch">
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">PM2.5</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-poor" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">118.4</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">µg/m³</span>
+            </div>
+          </article>
+
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">PM10</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-poor" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">246.0</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">µg/m³</span>
+            </div>
+          </article>
+
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">O3</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-good" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">38.2</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">µg/m³</span>
+            </div>
+          </article>
+
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">NO2</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-moderate" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">64.5</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">µg/m³</span>
+            </div>
+          </article>
+
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">SO2</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-good" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">14.8</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">µg/m³</span>
+            </div>
+          </article>
+
+          <article class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-label text-label-md text-on-surface-variant" data-design-text-token="label-md">CO</span>
+              <span class="h-2 w-2 rounded-full bg-aqi-moderate" aria-hidden="true"></span>
+            </div>
+            <div>
+              <span class="font-mono text-mono-lg text-on-surface tabular-nums" data-design-text-token="mono-lg">1.42</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant block" data-design-text-token="mono-sm">mg/m³</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-outline-variant bg-surface-container-lowest mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+          <p class="font-body text-body-sm" data-design-text-token="body-sm">Outdoor AQI is not an indoor air measurement</p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <span class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Simulate Stale Data</span>
+          <button id="stale-toggle" data-component-id="toggle-standard" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="false" aria-label="Simulate Stale Data" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-surface-container transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <span id="stale-thumb" class="pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+          </button>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('stale-toggle');
+      const thumb = document.getElementById('stale-thumb');
+      const badge = document.getElementById('freshness-badge');
+      const dot = document.getElementById('freshness-dot');
+      const text = document.getElementById('freshness-text');
+      if (!toggle) return;
+      toggle.addEventListener('click', function () {
+        const isStale = toggle.getAttribute('aria-checked') === 'true';
+        const next = !isStale;
+        toggle.setAttribute('aria-checked', String(next));
+        if (next) {
+          toggle.classList.remove('bg-surface-container');
+          toggle.classList.add('bg-primary');
+          thumb.classList.remove('translate-x-0');
+          thumb.classList.add('translate-x-5');
+          badge.classList.remove('bg-aqi-good-container', 'text-on-aqi-good-container');
+          badge.classList.add('bg-aqi-moderate-container', 'text-on-aqi-moderate-container');
+          dot.classList.remove('bg-aqi-good');
+          dot.classList.add('bg-aqi-moderate');
+          text.textContent = 'Updated 4h ago • Stale';
+        } else {
+          toggle.classList.add('bg-surface-container');
+          toggle.classList.remove('bg-primary');
+          thumb.classList.add('translate-x-0');
+          thumb.classList.remove('translate-x-5');
+          badge.classList.add('bg-aqi-good-container', 'text-on-aqi-good-container');
+          badge.classList.remove('bg-aqi-moderate-container', 'text-on-aqi-moderate-container');
+          dot.classList.add('bg-aqi-good');
+          dot.classList.remove('bg-aqi-moderate');
+          text.textContent = 'Updated 8m ago • Fresh';
+        }
+      });
+    })();
+  </script>
+
+
+</body></html>
+
+<!-- AIRQUA AI — Room & Smog Scan -->
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRQUA AI — Room &amp; Smog Scan</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#0F766E',
+        'on-primary': '#FFFFFF',
+        'primary-container': '#CCFBF1',
+        'on-primary-container': '#003733',
+        'secondary': '#466460',
+        'on-secondary': '#FFFFFF',
+        'secondary-container': '#E2E8F0',
+        'on-secondary-container': '#0F172A',
+        'surface': '#F8FAFC',
+        'on-surface': '#0F172A',
+        'surface-container-lowest': '#FFFFFF',
+        'surface-container-low': '#F1F5F9',
+        'surface-container': '#E2E8F0',
+        'on-surface-variant': '#475569',
+        'outline': '#64748B',
+        'outline-variant': '#E2E8F0',
+        'error': '#BA1A1A',
+        'on-error': '#FFFFFF',
+        'error-container': '#FFDAD6',
+        'on-error-container': '#410002',
+        'aqi-good': '#006C4A',
+        'on-aqi-good': '#FFFFFF',
+        'aqi-good-container': '#D1FAE5',
+        'on-aqi-good-container': '#002114',
+        'aqi-moderate': '#904D00',
+        'on-aqi-moderate': '#FFFFFF',
+        'aqi-moderate-container': '#FEF3C7',
+        'on-aqi-moderate-container': '#2F1500',
+        'aqi-poor': '#A73A00',
+        'on-aqi-poor': '#FFFFFF',
+        'aqi-poor-container': '#FFEDD5',
+        'on-aqi-poor-container': '#370E00',
+        'aqi-severe': '#BF0715',
+        'on-aqi-severe': '#FFFFFF',
+        'aqi-severe-container': '#FEE2E2',
+        'on-aqi-severe-container': '#410002',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Inter"', 'sans-serif'],
+        'body': ['"Inter"', 'sans-serif'],
+        'label': ['"Inter"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-xl': ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '700' }],
+        'display-xl-mobile': ['32px', { lineHeight: '36px', letterSpacing: '-0.75px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.3px', fontWeight: '600' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '150ms',
+        'surface-enter': '200ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=Red+Hat+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex flex-col" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Shared Global Header -->
+    <header class="bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <!-- Top Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-outline-variant">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded bg-primary text-on-primary">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">air</span>
+              </span>
+              <span class="font-headline text-title-md text-on-surface tracking-tight" data-design-text-token="title-md">AIRQUA AI</span>
+            </div>
+            <span data-component-id="badge-numeric" data-component-type="badge" data-component-variant="numeric" role="status" class="inline-flex items-center rounded-full bg-primary-container px-2.5 py-0.5 text-on-primary-container">
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Guest Mode</span>
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="AQI Scale">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-primary px-2.5 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">IN CPCB</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">US EPA</button>
+            </div>
+
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="Language">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-surface-container-lowest px-2.5 py-1 font-label text-label-sm text-on-surface border border-outline-variant transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">EN</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">தமிழ்</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Strip -->
+        <div class="py-3 flex flex-col gap-2.5 border-b border-outline-variant">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Select Indian City">
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary px-3 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Delhi</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Noida</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Mumbai</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Kolkata</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Bengaluru</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Chennai</button>
+            </div>
+
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-56">
+                <span class="material-symbols-outlined text-[16px] text-outline absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+                <input type="search" aria-label="Search any Indian city" placeholder="Search any Indian city..." class="w-full rounded border border-outline-variant bg-surface pl-8 pr-3 py-1.5 font-body text-body-sm text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary">
+              </div>
+              <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Use current GPS location" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container-lowest text-on-surface-variant transition-colors duration-state-change ease-state-change hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">my_location</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Household Persona">
+              <span class="font-label text-label-sm text-on-surface-variant mr-1" data-design-text-token="label-sm">Persona:</span>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Daily Commuter</button>
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary-container border border-primary px-3 py-1 font-label text-label-sm text-on-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Family with Kids</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Senior Citizen</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Student / Sports</button>
+            </div>
+
+            <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-container/50 px-3 py-1 font-label text-label-sm text-on-primary-container hover:bg-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">bolt</span>
+              <span>Try: Delhi • Family</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Tab Navigation Bar -->
+        <nav aria-label="Primary sections">
+          <div data-component-id="tabs-with-icon" data-component-type="tabs" data-component-variant="with-icon">
+            <div role="tablist" aria-label="AIRQUA AI sections" class="flex items-center gap-6 overflow-x-auto">
+              <a role="tab" id="tab-dashboard" href="../dashboard/Dashboard.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dashboard</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Dashboard</span>
+              </a>
+              <a role="tab" id="tab-room-scan" href="../room-scan/RoomScan.html" aria-selected="true" tabindex="0" class="inline-flex items-center gap-2 border-b-2 border-primary py-3 text-primary whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">photo_camera</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Room Scan</span>
+              </a>
+              <a role="tab" id="tab-simulator" href="../what-if-simulator/WhatIfSimulator.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">tune</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">What-If Simulator</span>
+              </a>
+              <a role="tab" id="tab-consultant" href="../ai-consultant/AiConsultant.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">AI Consultant</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content: Room & Smog Scan (2-column desktop, stacked mobile) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: Upload & Sample Photos -->
+        <section class="lg:col-span-5 flex flex-col gap-5" aria-labelledby="upload-heading">
+          <div class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-4">
+            <div>
+              <h1 id="upload-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Room &amp; Smog Scan</h1>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Upload a photo of your kitchen, bedroom, or outdoor haze for qualitative ventilation &amp; exposure guidance.</p>
+            </div>
+
+            <!-- Drag-and-Drop Zone -->
+            <label for="room-photo-input" class="flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-outline-variant bg-surface p-6 text-center cursor-pointer hover:border-primary transition-colors duration-state-change ease-state-change">
+              <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">cloud_upload</span>
+              </span>
+              <span class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">Drop photo here or click to browse</span>
+              <span class="font-mono text-mono-sm text-on-surface-variant" data-design-text-token="mono-sm">JPG, PNG, WEBP • Max 4 MB</span>
+              <input id="room-photo-input" type="file" accept="image/*" class="sr-only">
+            </label>
+
+            <!-- Active Preview -->
+            <div class="rounded-md border border-outline-variant overflow-hidden bg-surface-container-low">
+              <img id="active-preview-img" src="https://lh3.googleusercontent.com/aida/ALJJyrAambp818LOL_Tn5dOhcHggQaAogzcvpsiWYOg-SthkfYK2idUfHihn3gqxzyvHoLq4TJQDQQl1QWOxNBy7fMw0-HKAwga1nS0raX3TpPCmBMLATZs4XxauKcaUJfqmsWZopV67d-fCfiw1t4Ys7YziUq6k64msC3S1cdbIpt2gbfzP8VWA3SfP5Xx1ZKXy11BzMoZw0bwOpNhD-tR18-LaCcPKGok_oPHTnWfuR-4bz3EmhaeJAJjw6Ofy235pTQ" alt="Selected Urban Kitchen Stove photo for air quality inspection" class="w-full h-44 object-cover">
+              <div class="px-3 py-2 flex items-center justify-between border-t border-outline-variant bg-surface-container-lowest">
+                <span id="active-preview-label" class="font-label text-label-sm text-on-surface" data-design-text-token="label-sm">Selected: Urban Kitchen Stove</span>
+                <span class="font-mono text-mono-sm text-on-surface-variant" data-design-text-token="mono-sm">1.8 MB</span>
+              </div>
+            </div>
+
+            <!-- Try Sample Photo Thumbnails -->
+            <div class="flex flex-col gap-2">
+              <span class="font-label text-label-md text-on-surface" data-design-text-token="label-md">Try Sample Photo</span>
+              <div class="grid grid-cols-1 gap-2">
+                <button type="button" onclick="selectSample(&#39;Urban Kitchen Stove&#39;, &#39;../../images/sample_kitchen_stove.jpg&#39;, &#39;Detected: Kitchen&#39;)" class="group flex items-center gap-3 rounded-md border-2 border-primary bg-surface-container-lowest p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <img src="https://lh3.googleusercontent.com/aida/ALJJyrAambp818LOL_Tn5dOhcHggQaAogzcvpsiWYOg-SthkfYK2idUfHihn3gqxzyvHoLq4TJQDQQl1QWOxNBy7fMw0-HKAwga1nS0raX3TpPCmBMLATZs4XxauKcaUJfqmsWZopV67d-fCfiw1t4Ys7YziUq6k64msC3S1cdbIpt2gbfzP8VWA3SfP5Xx1ZKXy11BzMoZw0bwOpNhD-tR18-LaCcPKGok_oPHTnWfuR-4bz3EmhaeJAJjw6Ofy235pTQ" alt="Urban Kitchen Stove sample" class="w-16 h-12 rounded-sm object-cover shrink-0">
+                  <div class="flex flex-col">
+                    <span class="font-label text-label-md text-on-surface" data-design-text-token="label-md">Urban Kitchen Stove</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Gas burner &amp; exhaust check</span>
+                  </div>
+                </button>
+                <button type="button" onclick="selectSample(&#39;Bedroom Purifier Setup&#39;, &#39;../../images/sample_bedroom_purifier.jpg&#39;, &#39;Detected: Bedroom&#39;)" class="group flex items-center gap-3 rounded-md border border-outline-variant bg-surface-container-lowest p-2 text-left hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <img src="https://lh3.googleusercontent.com/aida/ALJJyrAdagnQ2QLySlEc3uoVvNFoUQ1e2wXZz5eA-vCCNwUL4U1oP98YLqoxMgEbdbN593S6AtoGxyjgewaSCjDZxo869NaG0jF3NhMNTJf31or_d55cdQurEpRrPd8AzBJdH0w5vzDI_CdiRuo9UX0s_q7NpJ-RXotLSFRsYIotO8Pgk6u6Meyk8G4fq6Qq5OzDbo_HVKGj-igWjTmIWwtCFV_WDgibRknuLyp8rS0QyS1wrKweLU3aPcSrlNXvZzMC8P4Kkg" alt="Bedroom Purifier Setup sample" class="w-16 h-12 rounded-sm object-cover shrink-0">
+                  <div class="flex flex-col">
+                    <span class="font-label text-label-md text-on-surface" data-design-text-token="label-md">Bedroom Purifier Setup</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">HEPA placement &amp; window seal</span>
+                  </div>
+                </button>
+                <button type="button" onclick="selectSample(&#39;Winter Morning Smog&#39;, &#39;../../images/sample_winter_smog.jpg&#39;, &#39;Detected: Outdoor Haze&#39;)" class="group flex items-center gap-3 rounded-md border border-outline-variant bg-surface-container-lowest p-2 text-left hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <img src="https://lh3.googleusercontent.com/aida/ALJJyrCc82crF2YgCedqwu2hF2Y22IyWb1uQYir06FDuHv0e2vVBt8xNXDlGLrsusLk-X6sWQJ-44PKgM2F6wVFaUW-aeribCAig5uJfcu2muNDOifHcMvbPpvKxQy2QSWKmW02HeM8QdLyrxzV5JUMV1yaC0_cc7__C3jTPNv8mTYWS0ch69ip_APzpaxo0PU6OXW-sZT5_T9b1lYKLOpi2Sq7VbBmpU2A2uyuD5rFQ-U855KOOEibzPPX7wWjM7w" alt="Winter Morning Smog sample" class="w-16 h-12 rounded-sm object-cover shrink-0">
+                  <div class="flex flex-col">
+                    <span class="font-label text-label-md text-on-surface" data-design-text-token="label-md">Winter Morning Smog</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Balcony visibility &amp; ventilation</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Primary CTA -->
+            <button data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-on-primary transition-colors duration-state-change ease-state-change hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">document_scanner</span>
+              <span class="font-label text-label-lg" data-design-text-token="label-lg">Analyze with Gemini Vision</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Right Column: Results Card -->
+        <section class="lg:col-span-7 flex flex-col gap-4" aria-labelledby="results-heading">
+          <div class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-5">
+            <!-- Results Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-outline-variant">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 id="results-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Visual Assessment</h2>
+                <span id="scene-badge" class="inline-flex items-center gap-1.5 rounded-full bg-primary-container px-3 py-1 font-label text-label-sm text-on-primary-container" data-design-text-token="label-sm">
+                  <span class="material-symbols-outlined text-[14px]" aria-hidden="true">kitchen</span>
+                  Detected: Kitchen
+                </span>
+              </div>
+              <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface px-2.5 py-0.5 font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">
+                <span class="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">auto_awesome</span>
+                AI Guidance
+              </span>
+            </div>
+
+            <!-- 3 Prioritized Finding Cards -->
+            <div class="flex flex-col gap-3">
+              <!-- Finding 1 -->
+              <article data-component-id="card-finding" data-component-type="card" data-component-variant="outlined" class="rounded-md border border-outline-variant bg-surface p-4 flex flex-col gap-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-full bg-aqi-poor-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-poor-container" data-design-text-token="label-sm">High Risk</span>
+                    <h3 class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">1. Unvented Tadka &amp; Gas NO2 Plume</h3>
+                  </div>
+                  <span class="inline-flex items-center rounded-full bg-aqi-good-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-good-container" data-design-text-token="label-sm">Free</span>
+                </div>
+                <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                  <strong class="text-on-surface">Mechanism:</strong> High-heat tempering releases ultrafine PM2.5 and NO2 that linger in adjacent living areas.
+                </p>
+                <p class="font-body text-body-sm text-on-surface" data-design-text-token="body-sm">
+                  <strong class="text-primary">Practical Fix:</strong> Switch on the range hood 5 minutes before lighting burners and keep the kitchen door closed to isolate smoke.
+                </p>
+              </article>
+
+              <!-- Finding 2 -->
+              <article data-component-id="card-finding" data-component-type="card" data-component-variant="outlined" class="rounded-md border border-outline-variant bg-surface p-4 flex flex-col gap-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-full bg-aqi-moderate-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-moderate-container" data-design-text-token="label-sm">Moderate Risk</span>
+                    <h3 class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">2. Grease-Coated Hood Baffle Filter</h3>
+                  </div>
+                  <span class="inline-flex items-center rounded-full bg-primary-container px-2.5 py-0.5 font-label text-label-sm text-on-primary-container" data-design-text-token="label-sm">Low-Cost</span>
+                </div>
+                <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                  <strong class="text-on-surface">Mechanism:</strong> Oil buildup reduces exhaust capture velocity by up to 40%, pushing fumes back into the room.
+                </p>
+                <p class="font-body text-body-sm text-on-surface text-balance" data-design-text-token="body-sm">
+                  <strong class="text-primary">Practical Fix:</strong> Soak metal baffle filters in warm water with baking soda and dish soap every 2 weeks.
+                </p>
+              </article>
+
+              <!-- Finding 3 -->
+              <article data-component-id="card-finding" data-component-type="card" data-component-variant="outlined" class="rounded-md border border-outline-variant bg-surface p-4 flex flex-col gap-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-full bg-aqi-moderate-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-moderate-container" data-design-text-token="label-sm">Moderate Risk</span>
+                    <h3 class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">3. Cross-Draft Window Timing</h3>
+                  </div>
+                  <span class="inline-flex items-center rounded-full border border-outline-variant bg-surface-container-lowest px-2.5 py-0.5 font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Equipment</span>
+                </div>
+                <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                  <strong class="text-on-surface">Mechanism:</strong> Opening windows during morning peak smog (AQI 268+) draws outdoor PM2.5 indoors even while venting smoke.
+                </p>
+                <p class="font-body text-body-sm text-on-surface" data-design-text-token="body-sm">
+                  <strong class="text-primary">Practical Fix:</strong> Rely on ducted exhaust in the morning; pair with a basic induction kettle or HEPA unit in the dining area.
+                </p>
+              </article>
+            </div>
+
+            <!-- Quick Action Checklist -->
+            <div class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 flex flex-col gap-2.5">
+              <h3 class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">Quick Action Checklist</h3>
+              <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" checked class="rounded border-outline-variant text-primary focus:ring-primary">
+                <span class="font-body text-body-sm text-on-surface" data-design-text-token="body-sm">Pre-run chimney exhaust 5 mins before cooking</span>
+              </label>
+              <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" class="rounded border-outline-variant text-primary focus:ring-primary">
+                <span class="font-body text-body-sm text-on-surface" data-design-text-token="body-sm">Cover simmering pots with lids to cut steam &amp; aerosol</span>
+              </label>
+              <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" class="rounded border-outline-variant text-primary focus:ring-primary">
+                <span class="font-body text-body-sm text-on-surface" data-design-text-token="body-sm">Clean baffle filters this weekend</span>
+              </label>
+            </div>
+
+            <!-- Bottom Info Banner -->
+            <div class="rounded-md border border-outline-variant bg-surface-container-low px-4 py-3 flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5" aria-hidden="true">sensors</span>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                Visual analysis is qualitative guidance; direct indoor monitoring requires a physical sensor
+              </p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-outline-variant bg-surface-container-lowest mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+          <p class="font-body text-body-sm" data-design-text-token="body-sm">Outdoor AQI is not an indoor air measurement</p>
+        </div>
+        <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">Delhi • IN CPCB: 268</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    function selectSample(label, src, sceneText) {
+      document.getElementById('active-preview-img').src = src;
+      document.getElementById('active-preview-label').textContent = 'Selected: ' + label;
+      document.getElementById('scene-badge').innerHTML = '<span class="material-symbols-outlined text-[14px]" aria-hidden="true">visibility</span> ' + sceneText;
+    }
+  </script>
+
+
+</body></html>
+
+<!-- AIRQUA AI — What-If Impact Simulator -->
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRQUA AI — What-If Impact Simulator</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#0F766E',
+        'on-primary': '#FFFFFF',
+        'primary-container': '#CCFBF1',
+        'on-primary-container': '#003733',
+        'secondary': '#466460',
+        'on-secondary': '#FFFFFF',
+        'secondary-container': '#E2E8F0',
+        'on-secondary-container': '#0F172A',
+        'surface': '#F8FAFC',
+        'on-surface': '#0F172A',
+        'surface-container-lowest': '#FFFFFF',
+        'surface-container-low': '#F1F5F9',
+        'surface-container': '#E2E8F0',
+        'on-surface-variant': '#475569',
+        'outline': '#64748B',
+        'outline-variant': '#E2E8F0',
+        'error': '#BA1A1A',
+        'on-error': '#FFFFFF',
+        'error-container': '#FFDAD6',
+        'on-error-container': '#410002',
+        'aqi-good': '#006C4A',
+        'on-aqi-good': '#FFFFFF',
+        'aqi-good-container': '#D1FAE5',
+        'on-aqi-good-container': '#002114',
+        'aqi-moderate': '#904D00',
+        'on-aqi-moderate': '#FFFFFF',
+        'aqi-moderate-container': '#FEF3C7',
+        'on-aqi-moderate-container': '#2F1500',
+        'aqi-poor': '#A73A00',
+        'on-aqi-poor': '#FFFFFF',
+        'aqi-poor-container': '#FFEDD5',
+        'on-aqi-poor-container': '#370E00',
+        'aqi-severe': '#BF0715',
+        'on-aqi-severe': '#FFFFFF',
+        'aqi-severe-container': '#FEE2E2',
+        'on-aqi-severe-container': '#410002',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Inter"', 'sans-serif'],
+        'body': ['"Inter"', 'sans-serif'],
+        'label': ['"Inter"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-xl': ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '700' }],
+        'display-xl-mobile': ['32px', { lineHeight: '36px', letterSpacing: '-0.75px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.3px', fontWeight: '600' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '150ms',
+        'surface-enter': '200ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=Red+Hat+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex flex-col" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Shared Global Header -->
+    <header class="bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-outline-variant">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded bg-primary text-on-primary">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">air</span>
+              </span>
+              <span class="font-headline text-title-md text-on-surface tracking-tight" data-design-text-token="title-md">AIRQUA AI</span>
+            </div>
+            <span data-component-id="badge-numeric" data-component-type="badge" data-component-variant="numeric" role="status" class="inline-flex items-center rounded-full bg-primary-container px-2.5 py-0.5 text-on-primary-container">
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Guest Mode</span>
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="AQI Scale">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-primary px-2.5 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">IN CPCB</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">US EPA</button>
+            </div>
+
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="Language">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-surface-container-lowest px-2.5 py-1 font-label text-label-sm text-on-surface border border-outline-variant transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">EN</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">தமிழ்</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Strip -->
+        <div class="py-3 flex flex-col gap-2.5 border-b border-outline-variant">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Select Indian City">
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary px-3 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Delhi</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Noida</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Mumbai</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Kolkata</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Bengaluru</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Chennai</button>
+            </div>
+
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-56">
+                <span class="material-symbols-outlined text-[16px] text-outline absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+                <input type="search" aria-label="Search any Indian city" placeholder="Search any Indian city..." class="w-full rounded border border-outline-variant bg-surface pl-8 pr-3 py-1.5 font-body text-body-sm text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary">
+              </div>
+              <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Use current GPS location" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container-lowest text-on-surface-variant transition-colors duration-state-change ease-state-change hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">my_location</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Household Persona">
+              <span class="font-label text-label-sm text-on-surface-variant mr-1" data-design-text-token="label-sm">Persona:</span>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Daily Commuter</button>
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary-container border border-primary px-3 py-1 font-label text-label-sm text-on-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Family with Kids</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Senior Citizen</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Student / Sports</button>
+            </div>
+
+            <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-container/50 px-3 py-1 font-label text-label-sm text-on-primary-container hover:bg-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">bolt</span>
+              <span>Try: Delhi • Family</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Tab Navigation Bar -->
+        <nav aria-label="Primary sections">
+          <div data-component-id="tabs-with-icon" data-component-type="tabs" data-component-variant="with-icon">
+            <div role="tablist" aria-label="AIRQUA AI sections" class="flex items-center gap-6 overflow-x-auto">
+              <a role="tab" id="tab-dashboard" href="../dashboard/Dashboard.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dashboard</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Dashboard</span>
+              </a>
+              <a role="tab" id="tab-room-scan" href="../room-scan/RoomScan.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">photo_camera</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Room Scan</span>
+              </a>
+              <a role="tab" id="tab-simulator" href="../what-if-simulator/WhatIfSimulator.html" aria-selected="true" tabindex="0" class="inline-flex items-center gap-2 border-b-2 border-primary py-3 text-primary whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">tune</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">What-If Simulator</span>
+              </a>
+              <a role="tab" id="tab-consultant" href="../ai-consultant/AiConsultant.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">AI Consultant</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content: What-If Impact Simulator (2-column desktop, stacked mobile) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: Today's Routine Swaps -->
+        <section class="lg:col-span-6 flex flex-col gap-4" aria-labelledby="swaps-heading">
+          <div class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-4">
+            <div>
+              <h1 id="swaps-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Today&#39;s Routine Swaps</h1>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Toggle realistic daily adjustments to preview separate exposure and emissions effects.</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <!-- Swap 1 -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-primary bg-primary-container/20 p-4">
+                <div class="flex flex-col gap-1">
+                  <span class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">Shift Walk to Safe Window</span>
+                  <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Move morning 7 AM walk to 3–5 PM lower-PM2.5 window.</span>
+                </div>
+                <button data-component-id="toggle-standard-on" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="true" aria-label="Shift Walk to Safe Window" class="sim-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+                </button>
+              </div>
+
+              <!-- Swap 2 -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-primary bg-primary-container/20 p-4">
+                <div class="flex flex-col gap-2 flex-1">
+                  <div>
+                    <span class="font-title text-title-sm text-on-surface block" data-design-text-token="title-sm">Switch Solo Car → Metro/Bus</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Replace single-occupancy petrol commute with public transit.</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label for="metro-km" class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Distance:</label>
+                    <input id="metro-km" type="number" value="10" min="1" max="100" class="w-20 rounded border border-outline-variant bg-surface-container-lowest px-2 py-1 font-mono text-mono-sm text-on-surface tabular-nums focus:border-primary focus:ring-1 focus:ring-primary">
+                    <span class="font-mono text-mono-sm text-on-surface-variant" data-design-text-token="mono-sm">km</span>
+                  </div>
+                </div>
+                <button data-component-id="toggle-standard-on" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="true" aria-label="Switch Solo Car to Metro or Bus" class="sim-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+                </button>
+              </div>
+
+              <!-- Swap 3 -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-outline-variant bg-surface p-4">
+                <div class="flex flex-col gap-2 flex-1">
+                  <div>
+                    <span class="font-title text-title-sm text-on-surface block" data-design-text-token="title-sm">Carpool School Run</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Share morning/afternoon drop-off with neighborhood families.</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label for="carpool-riders" class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Occupancy:</label>
+                    <select id="carpool-riders" class="rounded border border-outline-variant bg-surface-container-lowest px-2.5 py-1 font-mono text-mono-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary">
+                      <option value="2">2/3 riders</option>
+                      <option value="3">3/3 riders</option>
+                    </select>
+                  </div>
+                </div>
+                <button data-component-id="toggle-standard" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="false" aria-label="Carpool School Run" class="sim-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-surface-container transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <span class="pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+                </button>
+              </div>
+
+              <!-- Swap 4 -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-outline-variant bg-surface p-4">
+                <div class="flex flex-col gap-2 flex-1">
+                  <div>
+                    <span class="font-title text-title-sm text-on-surface block" data-design-text-token="title-sm">Consolidate Errands</span>
+                    <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Combine grocery &amp; pharmacy stops into one afternoon trip.</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label for="errands-km" class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">Saved:</label>
+                    <input id="errands-km" type="number" value="4" min="1" max="50" class="w-20 rounded border border-outline-variant bg-surface-container-lowest px-2 py-1 font-mono text-mono-sm text-on-surface tabular-nums focus:border-primary focus:ring-1 focus:ring-primary">
+                    <span class="font-mono text-mono-sm text-on-surface-variant" data-design-text-token="mono-sm">km</span>
+                  </div>
+                </div>
+                <button data-component-id="toggle-standard" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="false" aria-label="Consolidate Errands" class="sim-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-surface-container transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <span class="pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+                </button>
+              </div>
+
+              <!-- Swap 5 -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-primary bg-primary-container/20 p-4">
+                <div class="flex flex-col gap-1">
+                  <span class="font-title text-title-sm text-on-surface" data-design-text-token="title-sm">Kitchen Exhaust + Wet-Mop</span>
+                  <span class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">Run chimney during cooking and wet-mop instead of dry sweeping.</span>
+                </div>
+                <button data-component-id="toggle-standard-on" data-component-type="toggle" data-component-variant="standard" type="button" role="switch" aria-checked="true" aria-label="Kitchen Exhaust plus Wet-Mop" class="sim-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-surface-container-lowest shadow-sm transition-transform duration-state-change ease-state-change"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Dual Impact Output — Strictly Separate -->
+        <section class="lg:col-span-6 flex flex-col gap-5" aria-labelledby="dual-output-heading">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="dual-output-heading" class="font-headline text-headline-md text-on-surface" data-design-text-token="headline-md">Dual Impact Output — Strictly Separate</h2>
+            <span class="font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">No Blended Score</span>
+          </div>
+
+          <!-- Card A: Personal Exposure Shift -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="outlined" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-label text-label-sm text-on-surface-variant uppercase tracking-wider" data-design-text-token="label-sm">Card A • Personal Exposure Shift</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-aqi-good-container px-3 py-1 font-label text-label-sm text-on-aqi-good-container" data-design-text-token="label-sm">
+                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">trending_down</span>
+                Likely Lower Exposure Window
+              </span>
+            </div>
+
+            <p class="font-body text-body-md text-on-surface text-pretty" data-design-text-token="body-md">
+              Shifting your outdoor walk to 3–5 PM avoids the morning inversion peak (AQI 342) and pairs with kitchen exhaust + wet-mopping to cut indoor PM2.5 resuspension.
+            </p>
+
+            <div class="rounded-md border border-outline-variant bg-surface p-3 flex items-start gap-2">
+              <span class="material-symbols-outlined text-[16px] text-on-surface-variant shrink-0 mt-0.5" aria-hidden="true">info</span>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                Estimate based on hourly outdoor trends, not personal dosimetry
+              </p>
+            </div>
+          </article>
+
+          <!-- Card B: Emissions Impact -->
+          <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-label text-label-sm text-on-surface-variant uppercase tracking-wider" data-design-text-token="label-sm">Card B • Emissions Impact</span>
+              <span class="inline-flex items-center rounded-full border border-outline-variant bg-surface px-2.5 py-0.5 font-mono text-mono-sm text-on-surface-variant" data-design-text-token="mono-sm">Method v2.4 • India EF</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <span class="font-mono text-display-xl-mobile text-primary tabular-nums" data-design-text-token="display-xl-mobile">1.1 – 1.6 kg CO2e/day saved</span>
+              <p class="font-body text-body-sm text-on-surface-variant" data-design-text-token="body-sm">
+                Driven by 10 km solo petrol car → Delhi Metro/Bus mode shift.
+              </p>
+            </div>
+
+            <!-- Expandable Math & Assumptions Drawer -->
+            <details class="rounded-md border border-outline-variant bg-surface">
+              <summary class="px-4 py-2.5 cursor-pointer font-label text-label-md text-primary flex items-center justify-between select-none">
+                <span>Show Math &amp; Assumptions</span>
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">expand_more</span>
+              </summary>
+              <div class="px-4 pb-4 pt-2 border-t border-outline-variant flex flex-col gap-2">
+                <p class="font-mono text-mono-sm text-on-surface tabular-nums" data-design-text-token="mono-sm">
+                  ΔCO2e = d × (EF_car − EF_transit)
+                </p>
+                <ul class="font-body text-body-sm text-on-surface-variant list-disc pl-4 flex flex-col gap-1" data-design-text-token="body-sm">
+                  <li>Petrol hatchback EF: <span class="font-mono tabular-nums text-on-surface">0.14 – 0.19 kg CO2e/km</span> (India urban cycle)</li>
+                  <li>Metro / electric bus EF: <span class="font-mono tabular-nums text-on-surface">0.03 kg CO2e/pkm</span></li>
+                  <li>10 km × (0.14 − 0.03) = <span class="font-mono tabular-nums text-on-surface">1.1 kg</span>; 10 km × (0.19 − 0.03) = <span class="font-mono tabular-nums text-on-surface">1.6 kg</span></li>
+                </ul>
+              </div>
+            </details>
+          </article>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-outline-variant bg-surface-container-lowest mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+          <p class="font-body text-body-sm" data-design-text-token="body-sm">Outdoor AQI is not an indoor air measurement</p>
+        </div>
+        <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">Delhi • IN CPCB: 268</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    document.querySelectorAll('.sim-switch').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const isChecked = btn.getAttribute('aria-checked') === 'true';
+        const next = !isChecked;
+        btn.setAttribute('aria-checked', String(next));
+        const thumb = btn.querySelector('span');
+        const card = btn.closest('[data-component-type="toggle"]');
+        if (next) {
+          btn.classList.remove('bg-surface-container');
+          btn.classList.add('bg-primary');
+          thumb.classList.remove('translate-x-0');
+          thumb.classList.add('translate-x-5');
+          card.classList.remove('border-outline-variant', 'bg-surface');
+          card.classList.add('border-primary', 'bg-primary-container/20');
+        } else {
+          btn.classList.add('bg-surface-container');
+          btn.classList.remove('bg-primary');
+          thumb.classList.add('translate-x-0');
+          thumb.classList.remove('translate-x-5');
+          card.classList.add('border-outline-variant', 'bg-surface');
+          card.classList.remove('border-primary', 'bg-primary-container/20');
+        }
+      });
+    });
+  </script>
+
+
+</body></html>
+
+<!-- AIRQUA AI — Grounded AI Consultant -->
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRQUA AI — Grounded AI Consultant</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#0F766E',
+        'on-primary': '#FFFFFF',
+        'primary-container': '#CCFBF1',
+        'on-primary-container': '#003733',
+        'secondary': '#466460',
+        'on-secondary': '#FFFFFF',
+        'secondary-container': '#E2E8F0',
+        'on-secondary-container': '#0F172A',
+        'surface': '#F8FAFC',
+        'on-surface': '#0F172A',
+        'surface-container-lowest': '#FFFFFF',
+        'surface-container-low': '#F1F5F9',
+        'surface-container': '#E2E8F0',
+        'on-surface-variant': '#475569',
+        'outline': '#64748B',
+        'outline-variant': '#E2E8F0',
+        'error': '#BA1A1A',
+        'on-error': '#FFFFFF',
+        'error-container': '#FFDAD6',
+        'on-error-container': '#410002',
+        'aqi-good': '#006C4A',
+        'on-aqi-good': '#FFFFFF',
+        'aqi-good-container': '#D1FAE5',
+        'on-aqi-good-container': '#002114',
+        'aqi-moderate': '#904D00',
+        'on-aqi-moderate': '#FFFFFF',
+        'aqi-moderate-container': '#FEF3C7',
+        'on-aqi-moderate-container': '#2F1500',
+        'aqi-poor': '#A73A00',
+        'on-aqi-poor': '#FFFFFF',
+        'aqi-poor-container': '#FFEDD5',
+        'on-aqi-poor-container': '#370E00',
+        'aqi-severe': '#BF0715',
+        'on-aqi-severe': '#FFFFFF',
+        'aqi-severe-container': '#FEE2E2',
+        'on-aqi-severe-container': '#410002',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Inter"', 'sans-serif'],
+        'body': ['"Inter"', 'sans-serif'],
+        'label': ['"Inter"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-xl': ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '700' }],
+        'display-xl-mobile': ['32px', { lineHeight: '36px', letterSpacing: '-0.75px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.3px', fontWeight: '600' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '150ms',
+        'surface-enter': '200ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=Red+Hat+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex flex-col" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Shared Global Header -->
+    <header class="bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-outline-variant">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded bg-primary text-on-primary">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">air</span>
+              </span>
+              <span class="font-headline text-title-md text-on-surface tracking-tight" data-design-text-token="title-md">AIRQUA AI</span>
+            </div>
+            <span data-component-id="badge-numeric" data-component-type="badge" data-component-variant="numeric" role="status" class="inline-flex items-center rounded-full bg-primary-container px-2.5 py-0.5 text-on-primary-container">
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Guest Mode</span>
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="AQI Scale">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-primary px-2.5 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">IN CPCB</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">US EPA</button>
+            </div>
+
+            <div class="inline-flex rounded border border-outline-variant bg-surface-container-low p-0.5" role="group" aria-label="Language">
+              <button type="button" aria-pressed="true" class="rounded-sm bg-surface-container-lowest px-2.5 py-1 font-label text-label-sm text-on-surface border border-outline-variant transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">EN</button>
+              <button type="button" aria-pressed="false" class="rounded-sm px-2.5 py-1 font-label text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">தமிழ்</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Strip -->
+        <div class="py-3 flex flex-col gap-2.5 border-b border-outline-variant">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Select Indian City">
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary px-3 py-1 font-label text-label-sm text-on-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Delhi</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Noida</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Mumbai</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Kolkata</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Bengaluru</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Chennai</button>
+            </div>
+
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-56">
+                <span class="material-symbols-outlined text-[16px] text-outline absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+                <input type="search" aria-label="Search any Indian city" placeholder="Search any Indian city..." class="w-full rounded border border-outline-variant bg-surface pl-8 pr-3 py-1.5 font-body text-body-sm text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary">
+              </div>
+              <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Use current GPS location" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container-lowest text-on-surface-variant transition-colors duration-state-change ease-state-change hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">my_location</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Household Persona">
+              <span class="font-label text-label-sm text-on-surface-variant mr-1" data-design-text-token="label-sm">Persona:</span>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Daily Commuter</button>
+              <button type="button" aria-pressed="true" class="rounded-full bg-primary-container border border-primary px-3 py-1 font-label text-label-sm text-on-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Family with Kids</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Senior Citizen</button>
+              <button type="button" aria-pressed="false" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 font-label text-label-sm text-on-surface-variant hover:border-primary hover:text-on-surface transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Student / Sports</button>
+            </div>
+
+            <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-container/50 px-3 py-1 font-label text-label-sm text-on-primary-container hover:bg-primary-container transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">bolt</span>
+              <span>Try: Delhi • Family</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Tab Navigation Bar -->
+        <nav aria-label="Primary sections">
+          <div data-component-id="tabs-with-icon" data-component-type="tabs" data-component-variant="with-icon">
+            <div role="tablist" aria-label="AIRQUA AI sections" class="flex items-center gap-6 overflow-x-auto">
+              <a role="tab" id="tab-dashboard" href="../dashboard/Dashboard.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dashboard</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Dashboard</span>
+              </a>
+              <a role="tab" id="tab-room-scan" href="../room-scan/RoomScan.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">photo_camera</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Room Scan</span>
+              </a>
+              <a role="tab" id="tab-simulator" href="../what-if-simulator/WhatIfSimulator.html" aria-selected="false" tabindex="-1" class="inline-flex items-center gap-2 border-b-2 border-transparent py-3 text-on-surface-variant hover:text-on-surface whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">tune</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">What-If Simulator</span>
+              </a>
+              <a role="tab" id="tab-consultant" href="../ai-consultant/AiConsultant.html" aria-selected="true" tabindex="0" class="inline-flex items-center gap-2 border-b-2 border-primary py-3 text-primary whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">AI Consultant</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content: Grounded AI Consultant -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+
+      <!-- Live Context Strip Pills -->
+      <section aria-label="Live grounding context" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h1 class="font-headline text-title-md text-on-surface" data-design-text-token="title-md">Grounded AI Consultant</h1>
+          <span class="font-label text-label-sm text-primary" data-design-text-token="label-sm">Live Context Active</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-outline-variant px-3 py-1 font-label text-label-sm text-on-surface" data-design-text-token="label-sm">Delhi</span>
+          <span class="inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-outline-variant px-3 py-1 font-label text-label-sm text-on-surface" data-design-text-token="label-sm">Family with Kids</span>
+          <span class="inline-flex items-center gap-1 rounded-full bg-aqi-poor-container px-3 py-1 font-mono text-mono-sm text-on-aqi-poor-container tabular-nums" data-design-text-token="mono-sm">CPCB AQI: 268</span>
+          <span class="inline-flex items-center gap-1 rounded-full bg-aqi-good-container px-3 py-1 font-mono text-mono-sm text-on-aqi-good-container tabular-nums" data-design-text-token="mono-sm">Best Window: 2–4 PM</span>
+        </div>
+      </section>
+
+      <!-- Quick-Prompt Chips -->
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Quick prompts">
+        <button type="button" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3.5 py-1.5 font-label text-label-sm text-on-surface hover:border-primary hover:text-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">What should I change today?</button>
+        <button type="button" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3.5 py-1.5 font-label text-label-sm text-on-surface hover:border-primary hover:text-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">How do I reduce cooking smoke?</button>
+        <button type="button" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3.5 py-1.5 font-label text-label-sm text-on-surface hover:border-primary hover:text-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Why are you recommending this?</button>
+        <button type="button" class="rounded-full border border-outline-variant bg-surface-container-lowest px-3.5 py-1.5 font-label text-label-sm text-on-surface hover:border-primary hover:text-primary transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">Explain in Tamil</button>
+      </div>
+
+      <!-- Chat Thread -->
+      <section aria-label="Conversation" class="flex-1 flex flex-col gap-4">
+        <!-- User Message -->
+        <div class="flex justify-end">
+          <div class="max-w-lg rounded-lg bg-primary px-4 py-3 text-on-primary">
+            <p class="font-body text-body-md" data-design-text-token="body-md">What should I change today for my kids&#39; evening routine and school commute?</p>
+          </div>
+        </div>
+
+        <!-- AI Response 1 with Provenance Tags & Save Action -->
+        <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 flex flex-col gap-3.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1 rounded-full bg-aqi-poor-container px-2.5 py-0.5 font-label text-label-sm text-on-aqi-poor-container" data-design-text-token="label-sm">Observed Data</span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-primary-container px-2.5 py-0.5 font-label text-label-sm text-on-primary-container" data-design-text-token="label-sm">24h Forecast</span>
+            <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface px-2.5 py-0.5 font-label text-label-sm text-on-surface-variant" data-design-text-token="label-sm">AI Guidance</span>
+          </div>
+
+          <p class="font-body text-body-md text-on-surface text-pretty" data-design-text-token="body-md">
+            With Delhi&#39;s CPCB AQI at <span class="font-mono font-semibold tabular-nums">268</span> (Poor, PM2.5 <span class="font-mono tabular-nums">118.4 µg/m³</span>) and morning smog peaking between 6–8 AM, three targeted adjustments lower your children&#39;s exposure today:
+          </p>
+
+          <ul class="list-disc pl-5 flex flex-col gap-2 font-body text-body-md text-on-surface-variant" data-design-text-token="body-md">
+            <li><strong class="text-on-surface">Morning school drop-off (6–8 AM):</strong> Keep car windows closed on recirculation mode or fit snug N95/KF94 masks at bus stops.</li>
+            <li><strong class="text-on-surface">Outdoor play &amp; ventilation (2–5 PM):</strong> Open cross-ventilation windows from 2–4 PM and move outdoor play to 3–5 PM when hourly PM2.5 dips.</li>
+            <li><strong class="text-on-surface">Evening indoor air (6–11 PM):</strong> Close balcony doors by 5:30 PM, run the kitchen exhaust hood 5 minutes before cooking, and wet-mop instead of dry sweeping.</li>
+          </ul>
+
+          <footer class="pt-3 border-t border-outline-variant flex items-center justify-between gap-3">
+            <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">Grounded in Open-Meteo 08m ago</span>
+            <button type="button" onclick="this.textContent=&#39;Saved to Routine ✓&#39;" class="inline-flex items-center gap-1.5 rounded border border-primary px-3 py-1.5 font-label text-label-sm text-primary hover:bg-primary-container/40 transition-colors duration-state-change ease-state-change" data-design-text-token="label-sm">
+              <span class="material-symbols-outlined text-[16px]" aria-hidden="true">bookmark_add</span>
+              Save Action
+            </button>
+          </footer>
+        </article>
+      </section>
+
+      <!-- Bottom Input Bar + Medical Disclaimer -->
+      <section aria-label="Ask AIRQUA AI" class="rounded-lg border border-outline-variant bg-surface-container-lowest p-3 flex flex-col gap-2">
+        <form class="flex items-center gap-2" onsubmit="return false;">
+          <input id="chat-input" type="text" aria-label="Ask about today&#39;s air quality or indoor habits" placeholder="Ask about today&#39;s air quality, cooking smoke, or commute..." class="flex-1 rounded border border-outline-variant bg-surface px-3.5 py-2 font-body text-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary">
+          <button data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="submit" class="inline-flex items-center justify-center gap-1.5 rounded bg-primary px-4 py-2 text-on-primary transition-colors duration-state-change ease-state-change hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <span class="font-label text-label-lg" data-design-text-token="label-lg">Send</span>
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">send</span>
+          </button>
+        </form>
+        <p class="font-body text-body-sm text-on-surface-variant text-center" data-design-text-token="body-sm">
+          AIRQUA AI does not provide medical diagnoses
+        </p>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-outline-variant bg-surface-container-lowest mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+          <p class="font-body text-body-sm" data-design-text-token="body-sm">Outdoor AQI is not an indoor air measurement</p>
+        </div>
+        <span class="font-mono text-mono-sm text-on-surface-variant tabular-nums" data-design-text-token="mono-sm">Delhi • IN CPCB: 268</span>
+      </div>
+    </footer>
+
+  </div>
+
+
+</body></html>
