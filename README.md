@@ -2,9 +2,7 @@
 
 <br />
 
-<img src="https://raw.githubusercontent.com/singinghearthari/AirQua-AI/refs/heads/main/public/AirQua_ai_logo.jpeg" alt="AIRQUA AI Logo" width="116" height="116" style="border-radius: 24px;" />
-
-<h1>AIRQUA AI</h1>
+<img src="https://raw.githubusercontent.com/singinghearthari/AirQua-AI/refs/heads/main/public/AirQua_ai_logo.jpeg" alt="AIRQUA AI Logo" width="116" height="116" style="border-radius: 36px;" />
 
 <p><strong>Understand the air. Make informed choices. Build cleaner communities.</strong></p>
 
