@@ -44,6 +44,8 @@ export interface VisionRouterResult {
 const MANDATORY_SENSOR_NOTICE =
   'Visual analysis is qualitative guidance; direct indoor air quality measurement requires a physical indoor sensor.';
 
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+
 /**
  * Unified Chat Router: Calls Gemini first, and automatically falls back to Groq
  * on quota/rate-limit/timeout errors.
@@ -69,7 +71,7 @@ export async function routeChatCompletion(params: ChatRouterParams): Promise<Cha
     activeSimulatorSwaps
   );
 
-  // 1. Primary Attempt: Google Gemini (gemini-2.5-flash)
+  // 1. Primary Attempt: Google Gemini (gemini-3.5-flash-lite / GEMINI_MODEL)
   try {
     const ai = getGeminiClient();
     const contents = [
@@ -84,7 +86,7 @@ export async function routeChatCompletion(params: ChatRouterParams): Promise<Cha
     ];
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       contents,
       config: {
         systemInstruction,
@@ -208,11 +210,11 @@ export async function routeVisionCompletion(params: VisionRouterParams): Promise
   const base64Data = image.includes(',') ? image.split(',')[1] : image;
   const systemPrompt = getRoomScanSystemPrompt(persona, language);
 
-  // 1. Primary Attempt: Google Gemini (gemini-2.5-flash)
+  // 1. Primary Attempt: Google Gemini (gemini-3.5-flash-lite / GEMINI_MODEL)
   try {
     const ai = getGeminiClient();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       contents: [
         {
           role: 'user',
