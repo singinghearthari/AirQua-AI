@@ -136,5 +136,19 @@ describe('SafeWindowEngine', () => {
       expect(peakHour!.ventilationStatus).toBe('AVOID');
       expect(peakHour!.outdoorStatus).toBe('AVOID');
     });
+
+    it('handles empty forecast array and zero/extreme PM2.5 boundary values safely', () => {
+      const emptySummary = computeSafeWindowSummary([], 'COMMUTER');
+      expect(emptySummary.bestVentilationWindow).toBeNull();
+      expect(emptySummary.bestOutdoorWindow).toBeNull();
+      expect(emptySummary.peakSmogWindow).toBeNull();
+      expect(emptySummary.hourlySlots).toHaveLength(0);
+
+      const zeroPlan = generatePersonaDayPeriodPlan('AFTERNOON', '12:00 - 17:00', 0, 'SENIOR');
+      expect(zeroPlan.riskLevel).toBe('LOW');
+
+      const extremePlan = generatePersonaDayPeriodPlan('EVENING', '17:00 - 23:00', 600, 'SENIOR');
+      expect(extremePlan.riskLevel).toBe('HIGH');
+    });
   });
 });

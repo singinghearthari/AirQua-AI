@@ -36,7 +36,10 @@ describe('usAqiMapper & Strict Scale Separation', () => {
       expect(moderateAqi).toBeGreaterThanOrEqual(70);
       expect(moderateAqi).toBeLessThanOrEqual(85);
 
-      // Extreme concentration capped at 500
+      // Zero and negative/extreme boundary behavior
+      expect(calculateUsAqiFromPm25(0)).toBe(0);
+      expect(calculateUsAqiFromPm25(-5)).toBeNull();
+      expect(calculateUsAqiFromPm25(null)).toBeNull();
       expect(calculateUsAqiFromPm25(600)).toBe(500);
     });
   });

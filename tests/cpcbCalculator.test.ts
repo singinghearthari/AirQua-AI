@@ -50,10 +50,16 @@ describe('cpcbCalculator', () => {
       expect(calculateCpcbSubIndex('CO', 10.0)).toBe(200);
     });
 
-    it('handles null, negative, and invalid values gracefully', () => {
+    it('handles zero, boundary, null, negative, and non-finite values safely', () => {
+      expect(calculateCpcbSubIndex('PM2_5', 0)).toBe(0);
+      expect(calculateCpcbSubIndex('PM10', 0)).toBe(0);
+      expect(calculateCpcbSubIndex('PM2_5', 500)).toBe(500);
+      expect(calculateCpcbSubIndex('PM2_5', 9999)).toBe(500);
       expect(calculateCpcbSubIndex('PM2_5', null)).toBeNull();
       expect(calculateCpcbSubIndex('PM2_5', -10)).toBeNull();
       expect(calculateCpcbSubIndex('PM2_5', NaN)).toBeNull();
+      expect(calculateCpcbSubIndex('PM2_5', Infinity)).toBe(500);
+      expect(calculateCpcbSubIndex('PM2_5', -Infinity)).toBeNull();
     });
   });
 

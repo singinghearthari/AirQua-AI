@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Mic, Sparkles, Volume2 } from 'lucide-react';
+import Image from 'next/image';
+import { Mic, Sparkles } from 'lucide-react';
 import { useAirqua } from '@/context/AirquaContext';
 import GroundedChatPanel from '@/components/chat/GroundedChatPanel';
 
@@ -10,7 +11,6 @@ export default function AssistantPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 1. Header Card */}
       <section
         aria-label="AI Consultant Overview"
         className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -18,10 +18,11 @@ export default function AssistantPage() {
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl overflow-hidden border border-outline-variant/60 shadow-xs shrink-0 bg-surface-container">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/logo.jpeg"
                 alt="AIRQUA AI Logo"
+                width={40}
+                height={40}
                 className="h-full w-full object-cover"
               />
             </div>
@@ -54,7 +55,6 @@ export default function AssistantPage() {
         </div>
       </section>
 
-      {/* 2. Grounded Chat Panel */}
       <section aria-label="Interactive Air Quality Consultant">
         <GroundedChatPanel />
       </section>

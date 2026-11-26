@@ -35,9 +35,9 @@ export default function MathAssumptionsDrawer({ simulation }: MathAssumptionsDra
             <Calculator className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
-            <h4 className="font-display font-semibold text-[14px] text-on-surface">
+            <h2 className="font-display font-semibold text-[14px] text-on-surface">
               {t.simulator.showMath}
-            </h4>
+            </h2>
             <span className="text-[11px] font-mono text-on-surface-variant">
               Full transparency on vehicle emission factors, mathematical formulas, and scientific boundaries
             </span>

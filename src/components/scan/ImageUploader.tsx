@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useRef, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { UploadCloud, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { compressImageFile, SupportedImageMime } from '@/lib/media/imageCompression';
 
 interface ImageUploaderProps {
   selectedImage: string | null;
@@ -9,7 +11,7 @@ interface ImageUploaderProps {
   fileSizeBytes?: number | null;
   onImageSelected: (
     dataUrl: string,
-    mimeType: 'image/jpeg' | 'image/png' | 'image/webp',
+    mimeType: SupportedImageMime,
     sizeBytes: number,
     fileName: string
   ) => void;
@@ -18,8 +20,12 @@ interface ImageUploaderProps {
   error?: string | null;
 }
 
-const MAX_RAW_BYTES = 10 * 1024 * 1024; // 10 MB raw file cap before client compression
-const MAX_DIMENSION = 1600; // Resize images exceeding 1600px
+function formatBytes(bytes?: number | null): string {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 export default function ImageUploader({
   selectedImage,
@@ -34,85 +40,10 @@ export default function ImageUploader({
   const [localError, setLocalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * Client-side image compression using offscreen HTML canvas.
-   * Ensures output is strictly <= 4 MB before network transmission.
-   */
-  const processAndCompressFile = useCallback(
+  const handleFile = useCallback(
     (file: File) => {
       setLocalError(null);
-
-      // Validate MIME
-      const validTypes: Array<'image/jpeg' | 'image/png' | 'image/webp'> = [
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-      ];
-      if (!validTypes.includes(file.type as any)) {
-        setLocalError('Please upload a valid JPEG, PNG, or WEBP image.');
-        return;
-      }
-
-      if (file.size > MAX_RAW_BYTES) {
-        setLocalError('Original file is too large (>10 MB). Please choose a smaller image.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const rawDataUrl = event.target?.result as string;
-        if (!rawDataUrl) {
-          setLocalError('Failed to read image data.');
-          return;
-        }
-
-        const img = new Image();
-        img.onload = () => {
-          let { width, height } = img;
-
-          // Downscale if dimension exceeds 1600px
-          if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-            if (width > height) {
-              height = Math.round((height * MAX_DIMENSION) / width);
-              width = MAX_DIMENSION;
-            } else {
-              width = Math.round((width * MAX_DIMENSION) / height);
-              height = MAX_DIMENSION;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            // Fallback if canvas 2D context fails
-            onImageSelected(rawDataUrl, file.type as any, file.size, file.name);
-            return;
-          }
-
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Compress to JPEG with 0.85 quality
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          const base64Len = compressedDataUrl.split(',')[1]?.length || 0;
-          const approxBytes = Math.round((base64Len * 3) / 4);
-
-          onImageSelected(compressedDataUrl, 'image/jpeg', approxBytes, file.name);
-        };
-
-        img.onerror = () => {
-          setLocalError('Unable to load image file. Please try another photo.');
-        };
-
-        img.src = rawDataUrl;
-      };
-
-      reader.onerror = () => {
-        setLocalError('Failed to read image from disk.');
-      };
-
-      reader.readAsDataURL(file);
+      compressImageFile(file, onImageSelected, setLocalError);
     },
     [onImageSelected]
   );
@@ -134,18 +65,13 @@ export default function ImageUploader({
     e.stopPropagation();
     setIsDragging(false);
     if (isLoading) return;
-
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processAndCompressFile(files[0]);
-    }
+    if (files && files.length > 0) handleFile(files[0]);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      processAndCompressFile(files[0]);
-    }
+    if (files && files.length > 0) handleFile(files[0]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -155,18 +81,10 @@ export default function ImageUploader({
     }
   };
 
-  const formatBytes = (bytes?: number | null) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
   const displayedError = error || localError;
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      {/* Hidden native input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -178,15 +96,15 @@ export default function ImageUploader({
         disabled={isLoading}
       />
 
-      {/* Selected Image Preview Mode */}
       {selectedImage ? (
         <div className="relative rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-xs flex flex-col sm:flex-row items-center gap-4">
           <div className="relative w-full sm:w-36 h-36 rounded-lg overflow-hidden border border-outline-variant bg-surface-container-low shrink-0 flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={selectedImage}
               alt="Selected inspection photo preview"
-              className="w-full h-full object-cover"
+              fill
+              unoptimized
+              className="object-cover"
             />
           </div>
 
@@ -221,7 +139,6 @@ export default function ImageUploader({
           </button>
         </div>
       ) : (
-        /* Dropzone / Upload Box */
         <div
           role="button"
           tabIndex={0}
@@ -252,7 +169,6 @@ export default function ImageUploader({
         </div>
       )}
 
-      {/* Accessible Error Callout */}
       {displayedError && (
         <div
           role="alert"

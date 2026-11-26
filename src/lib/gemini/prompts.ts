@@ -1,7 +1,13 @@
-import { HouseholdPersona, SupportedLanguage } from '@/types/airqua';
+import {
+  AirQualitySnapshot,
+  HouseholdPersona,
+  SafeWindowSummary,
+  SupportedLanguage,
+} from '@/types/airqua';
 
 /**
- * Exact Room & Smog Scan System Prompt from skills.md (PromptWars Challenge 6 Aligned).
+ * Builds the multimodal Room & Smog Scan system prompt enforcing qualitative inspection,
+ * Indian household prioritization (`FREE` / `LOW_COST` / `EQUIPMENT`), and the mandatory sensor notice.
  */
 export function getRoomScanSystemPrompt(
   persona: HouseholdPersona,
@@ -43,14 +49,14 @@ Return strictly valid JSON matching this schema:
 }
 
 /**
- * Exact Grounded Bilingual AI Consultant System Prompt from skills.md.
- * Injects verified telemetry, safe windows, persona context, and cross-screen summaries.
+ * Builds the grounded bilingual AI Consultant system prompt injecting verified live AQI,
+ * weather dispersion telemetry, 24h safe windows, active persona, and cross-screen summaries.
  */
 export function getChatConsultantSystemPrompt(
   persona: HouseholdPersona,
   language: SupportedLanguage,
-  snapshot?: any,
-  safeWindows?: any,
+  snapshot?: AirQualitySnapshot | null,
+  safeWindows?: SafeWindowSummary | null,
   latestRoomScanSummary?: string,
   activeSimulatorSwaps?: string[]
 ): string {
@@ -88,7 +94,7 @@ export function getChatConsultantSystemPrompt(
           : 'Standard persona defaults active',
     },
     pollutants: Array.isArray(snapshot?.pollutants)
-      ? snapshot.pollutants.map((p: any) => ({
+      ? snapshot.pollutants.map((p) => ({
           code: p.code,
           value: p.value,
           unit: p.unit,
@@ -99,7 +105,7 @@ export function getChatConsultantSystemPrompt(
       bestOutdoorWindow: safeWindows?.bestOutdoorWindow || null,
       peakSmogWindow: safeWindows?.peakSmogWindow || null,
       dailyPeriods: Array.isArray(safeWindows?.dailyPeriods)
-        ? safeWindows.dailyPeriods.map((dp: any) => ({
+        ? safeWindows.dailyPeriods.map((dp) => ({
             period: dp.period,
             timeRange: dp.timeRange,
             avgPm25: dp.avgPm25,

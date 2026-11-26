@@ -4,9 +4,38 @@ import { POST as speakHandler } from '@/app/api/voice/speak/route';
 import * as groqClientModule from '@/lib/ai/groqClient';
 import { NextRequest } from 'next/server';
 
+type GroqClient = NonNullable<ReturnType<typeof groqClientModule.getGroqClient>>;
+
+function asMockGroqVoiceClient(
+  overrides: {
+    transcriptionsCreate?: ReturnType<typeof vi.fn>;
+    speechCreate?: ReturnType<typeof vi.fn>;
+  }
+): GroqClient {
+  return {
+    audio: {
+      transcriptions: { create: overrides.transcriptionsCreate ?? vi.fn() },
+      speech: { create: overrides.speechCreate ?? vi.fn() },
+    },
+  } as unknown as GroqClient;
+}
+
 describe('/api/voice/transcribe', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('rejects invalid non-multipart body with status 400', async () => {
+    const req = new NextRequest('http://localhost:3000/api/voice/transcribe', {
+      method: 'POST',
+      body: 'not multipart',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await transcribeHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/Invalid multipart/i);
   });
 
   it('rejects requests without audio file with status 400', async () => {
@@ -29,9 +58,9 @@ describe('/api/voice/transcribe', () => {
       text: 'What is today AQI in Delhi?',
     });
 
-    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue({
-      audio: { transcriptions: { create: mockTranscribe } },
-    } as any);
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqVoiceClient({ transcriptionsCreate: mockTranscribe })
+    );
 
     const formData = new FormData();
     const fakeAudioBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
@@ -69,11 +98,75 @@ describe('/api/voice/transcribe', () => {
     const json = await res.json();
     expect(json.fallbackToBrowserSTT).toBe(true);
   });
+
+  it('rejects audio files exceeding the 10 MB cap with status 413', async () => {
+    const oversizedBytes = new Uint8Array(10 * 1024 * 1024 + 64);
+    const formData = new FormData();
+    formData.append('file', new Blob([oversizedBytes], { type: 'audio/webm' }), 'huge.webm');
+
+    const req = new NextRequest('http://localhost:3000/api/voice/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await transcribeHandler(req);
+    expect(res.status).toBe(413);
+    const json = await res.json();
+    expect(json.error).toMatch(/10 MB limit/i);
+  });
+
+  it('returns status 502 with fallbackToBrowserSTT when Groq Whisper fails upstream', async () => {
+    const mockTranscribeFail = vi.fn().mockRejectedValue(new Error('Whisper model error'));
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqVoiceClient({ transcriptionsCreate: mockTranscribeFail })
+    );
+
+    const formData = new FormData();
+    formData.append('file', new Blob(['RIFF'], { type: 'audio/wav' }), 'sample.wav');
+    formData.append('language', 'ta');
+
+    const req = new NextRequest('http://localhost:3000/api/voice/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await transcribeHandler(req);
+    expect(res.status).toBe(502);
+    const json = await res.json();
+    expect(json.fallbackToBrowserSTT).toBe(true);
+  });
 });
 
 describe('/api/voice/speak', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('rejects malformed JSON body with status 400', async () => {
+    const req = new NextRequest('http://localhost:3000/api/voice/speak', {
+      method: 'POST',
+      body: '{invalid json',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await speakHandler(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects markdown-only text that sanitizes to empty string with status 400', async () => {
+    const req = new NextRequest('http://localhost:3000/api/voice/speak', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: '[ ](https://example.com) ```block```',
+        language: 'en',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await speakHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/empty after sanitization/i);
   });
 
   it('returns fallbackToBrowserTTS for Tamil (ta) to use native browser voices', async () => {
@@ -114,9 +207,9 @@ describe('/api/voice/speak', () => {
       arrayBuffer: async () => mockAudioBytes.buffer,
     });
 
-    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue({
-      audio: { speech: { create: mockSpeechCreate } },
-    } as any);
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqVoiceClient({ speechCreate: mockSpeechCreate })
+    );
 
     const req = new NextRequest('http://localhost:3000/api/voice/speak', {
       method: 'POST',
@@ -136,9 +229,9 @@ describe('/api/voice/speak', () => {
   it('gracefully returns fallbackToBrowserTTS if Groq speech model errors', async () => {
     const mockSpeechCreate = vi.fn().mockRejectedValue(new Error('Terms required'));
 
-    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue({
-      audio: { speech: { create: mockSpeechCreate } },
-    } as any);
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqVoiceClient({ speechCreate: mockSpeechCreate })
+    );
 
     const req = new NextRequest('http://localhost:3000/api/voice/speak', {
       method: 'POST',

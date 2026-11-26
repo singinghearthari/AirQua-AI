@@ -3,8 +3,10 @@ import { GoogleGenAI } from '@google/genai';
 let cachedClient: GoogleGenAI | null = null;
 
 /**
- * Returns a server-only instance of the GoogleGenAI client.
- * Strictly server-side: never exposed to client-side code.
+ * Returns a strictly server-side singleton instance of the `GoogleGenAI` client
+ * configured with a 15-second upstream timeout guardrail.
+ *
+ * @throws Error if called from a browser environment or when `GEMINI_API_KEY` is unset.
  */
 export function getGeminiClient(): GoogleGenAI {
   if (typeof window !== 'undefined') {
@@ -23,7 +25,7 @@ export function getGeminiClient(): GoogleGenAI {
       apiKey,
       apiVersion: 'v1beta',
       httpOptions: {
-        timeout: 15000, // 15-second timeout guardrail
+        timeout: 15000,
       },
     });
   }

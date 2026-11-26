@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/TypeScript-Strict_Mode-0F172A?style=flat-square&logo=typescript&logoColor=3178C6" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Gemini_3.5_Flash_lite-Primary_AI-0F172A?style=flat-square&logo=googlegemini&logoColor=8E75B2" alt="Gemini 3.5 Flash lite" />
   <img src="https://img.shields.io/badge/Groq-Auto_Failover_%26_Voice-0F172A?style=flat-square&logo=lightning&logoColor=F55036" alt="Groq" />
-  <img src="https://img.shields.io/badge/Vitest-53%2F53_Passing-0F766E?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Vitest-112%2F112_Passing-0F766E?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
   <img src="https://img.shields.io/badge/Accessibility-WCAG_AA-0F766E?style=flat-square" alt="WCAG AA" />
 </p>
 
@@ -39,7 +39,7 @@
       <sub>Pure TypeScript for CPCB/US AQI, 24h windows &amp; CO₂e ranges</sub>
     </td>
     <td align="center" width="25%">
-      <h3><code>53/53</code> Tests</h3>
+      <h3><code>112/112</code> Tests</h3>
       <sub>0 TypeScript errors · 0 ESLint warnings · 11 test suites</sub>
     </td>
     <td align="center" width="25%">
@@ -274,7 +274,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 # 3. Verify all 4 engineering quality gates
 npx tsc --noEmit   # 0 errors
 npm run lint       # 0 errors, 0 warnings
-npm test           # 53/53 Vitest tests passing
+npm test           # 112/112 Vitest tests passing
 npm run build      # Production build verification
 
 # 4. Run locally

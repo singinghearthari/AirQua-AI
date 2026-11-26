@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { fetchWithTimeout, jsonError } from '@/lib/api/http';
 
 export const runtime = 'nodejs';
 
-// 24-hour in-memory geocoding cache
 interface CacheEntry {
   results: CityResult[];
   timestamp: number;
@@ -17,10 +17,23 @@ interface CityResult {
   longitude: number;
 }
 
-const geocodeCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+interface OpenMeteoGeocodeItem {
+  name: string;
+  admin1?: string;
+  admin2?: string;
+  country?: string;
+  country_code?: string;
+  latitude: number;
+  longitude: number;
+}
 
-// Fallback catalog of major Indian cities for resilience and offline support
+interface OpenMeteoGeocodeResponse {
+  results?: OpenMeteoGeocodeItem[];
+}
+
+const geocodeCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
 const INDIAN_FALLBACK_CITIES: CityResult[] = [
   { name: 'Delhi', region: 'National Capital Territory of Delhi', countryCode: 'IN', latitude: 28.6139, longitude: 77.209 },
   { name: 'Noida', region: 'Uttar Pradesh', countryCode: 'IN', latitude: 28.5355, longitude: 77.391 },
@@ -48,16 +61,18 @@ const QuerySchema = z.object({
     .transform((val) => val.trim()),
 });
 
+/**
+ * Searches pan-India and global cities via Open-Meteo Geocoding with a 24h cache
+ * and offline Indian city catalog fallback.
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const rawQ = searchParams.get('q');
+  const parseResult = QuerySchema.safeParse({ q: searchParams.get('q') });
 
-  const parseResult = QuerySchema.safeParse({ q: rawQ });
   if (!parseResult.success) {
-    return NextResponse.json(
-      { error: 'Invalid search query', details: parseResult.error.format() },
-      { status: 400 }
-    );
+    return jsonError('Invalid search query', 400, {
+      details: parseResult.error.format(),
+    });
   }
 
   const query = parseResult.data.q;
@@ -76,21 +91,16 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('language', 'en');
     url.searchParams.set('format', 'json');
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-
-    const res = await fetch(url.toString(), {
-      signal: controller.signal,
+    const res = await fetchWithTimeout(url.toString(), {
+      timeoutMs: 6000,
       headers: { Accept: 'application/json' },
     });
-    clearTimeout(timeout);
 
     if (res.ok) {
-      const data = await res.json();
+      const data = (await res.json()) as OpenMeteoGeocodeResponse;
       const rawResults = data.results || [];
 
-      // Format and prioritize Indian results
-      const results: CityResult[] = rawResults.map((item: any) => ({
+      const results: CityResult[] = rawResults.map((item) => ({
         name: item.name,
         region: item.admin1 || item.admin2 || item.country,
         countryCode: item.country_code ? item.country_code.toUpperCase() : 'IN',
@@ -98,7 +108,6 @@ export async function GET(request: NextRequest) {
         longitude: item.longitude,
       }));
 
-      // Sort Indian results first
       results.sort((a, b) => {
         if (a.countryCode === 'IN' && b.countryCode !== 'IN') return -1;
         if (a.countryCode !== 'IN' && b.countryCode === 'IN') return 1;
@@ -112,7 +121,6 @@ export async function GET(request: NextRequest) {
     console.warn('Open-Meteo geocoding fetch failed, falling back to local dataset:', error);
   }
 
-  // Fallback to local catalog filtering
   const lowerQ = query.toLowerCase();
   const fallbackMatches = INDIAN_FALLBACK_CITIES.filter(
     (c) =>

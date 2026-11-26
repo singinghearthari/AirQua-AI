@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGroqClient } from '@/lib/ai/groqClient';
-import { stripMarkdownForSpeech } from '@/hooks/useVoiceAssistant';
-import { checkRateLimit } from '@/lib/security/rateLimit';
+import {
+  enforceRateLimit,
+  getErrorMessage,
+  jsonError,
+  parseJsonBody,
+} from '@/lib/api/http';
+import { stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
 
 export const runtime = 'nodejs';
 
@@ -11,51 +16,29 @@ const SpeakRequestSchema = z.object({
   language: z.enum(['en', 'ta']).optional().default('en'),
 });
 
+/**
+ * Synthesizes English speech via Groq Orpheus neural TTS and gracefully signals
+ * browser SpeechSynthesis fallback for Tamil (`ta`) or unavailable upstream service.
+ */
 export async function POST(request: NextRequest) {
-  // 1. Rate Limiting (25 requests per minute)
-  const clientIp =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    'anonymous';
+  const rateLimitResponse = enforceRateLimit(
+    request,
+    25,
+    60 * 1000,
+    'Too many speech requests. Please wait a moment.'
+  );
+  if (rateLimitResponse) return rateLimitResponse;
 
-  const rateCheck = checkRateLimit(clientIp, 25, 60 * 1000);
-  if (!rateCheck.allowed) {
-    return NextResponse.json(
-      {
-        error: 'Too many speech requests. Please wait a moment.',
-        retryAfterSec: rateCheck.retryAfterSec,
-      },
-      {
-        status: 429,
-        headers: { 'Retry-After': rateCheck.retryAfterSec.toString() },
-      }
-    );
-  }
+  const parsed = await parseJsonBody(request, SpeakRequestSchema, 'Invalid speak request');
+  if ('errorResponse' in parsed) return parsed.errorResponse;
 
-  // 2. Parse & Validate Body
-  let body: any;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 });
-  }
-
-  const parseResult = SpeakRequestSchema.safeParse(body);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: 'Invalid speak request', details: parseResult.error.format() },
-      { status: 400 }
-    );
-  }
-
-  const { text, language } = parseResult.data;
+  const { text, language } = parsed.data;
   const cleanText = stripMarkdownForSpeech(text);
 
   if (!cleanText) {
-    return NextResponse.json({ error: 'Text was empty after sanitization' }, { status: 400 });
+    return jsonError('Text was empty after sanitization', 400);
   }
 
-  // 3. For Tamil or missing Groq client, cleanly signal fallback to browser SpeechSynthesis
   const groq = getGroqClient();
   if (language === 'ta' || !groq) {
     return NextResponse.json(
@@ -70,7 +53,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. For English, attempt Groq Orpheus Neural Audio
   try {
     const speechResponse = await groq.audio.speech.create({
       model: 'canopylabs/orpheus-v1-english',
@@ -89,17 +71,17 @@ export async function POST(request: NextRequest) {
         'Cache-Control': 'public, max-age=3600',
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, 'Groq speech model error, using browser synthesis');
     console.warn(
       '[api/voice/speak] Groq speech model unavailable or terms required, falling back to browser TTS:',
-      err?.message || err
+      message
     );
 
-    // Smoothly signal fallback to browser speech synthesis
     return NextResponse.json(
       {
         fallbackToBrowserTTS: true,
-        reason: err?.message || 'Groq speech model error, using browser synthesis',
+        reason: message,
       },
       { status: 200 }
     );

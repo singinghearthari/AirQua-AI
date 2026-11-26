@@ -2,21 +2,20 @@
 
 import React, { useState } from 'react';
 import {
-  ShieldAlert,
-  CheckCircle,
-  AlertTriangle,
-  BookmarkPlus,
-  Sparkles,
-  Utensils,
   Bed,
-  Home,
+  BookmarkPlus,
+  CheckCircle,
   CloudFog,
   Compass,
-  Tag,
+  Home,
+  ShieldAlert,
+  Sparkles,
+  Utensils,
   Zap,
 } from 'lucide-react';
 import { RoomScanResult } from '@/types/airqua';
 import { useAirqua } from '@/context/AirquaContext';
+import FindingItemCard from './FindingItemCard';
 
 interface RoomActionCardProps {
   result: RoomScanResult;
@@ -37,46 +36,6 @@ function renderSceneIcon(type: string) {
   }
 }
 
-function getRiskStyle(risk: 'LOW' | 'MEDIUM' | 'HIGH') {
-  switch (risk) {
-    case 'HIGH':
-      return {
-        container: 'bg-error-container text-on-error-container border-error/30',
-        badge: 'bg-error text-on-error',
-      };
-    case 'MEDIUM':
-      return {
-        container: 'bg-aqi-moderate-container text-on-aqi-moderate-container border-aqi-moderate/30',
-        badge: 'bg-aqi-moderate text-on-aqi-moderate',
-      };
-    case 'LOW':
-      return {
-        container: 'bg-aqi-good-container text-on-aqi-good-container border-aqi-good/30',
-        badge: 'bg-aqi-good text-on-aqi-good',
-      };
-  }
-}
-
-function getCostBadge(cost: 'FREE' | 'LOW_COST' | 'EQUIPMENT') {
-  switch (cost) {
-    case 'FREE':
-      return {
-        label: 'Free / Zero Cost',
-        style: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      };
-    case 'LOW_COST':
-      return {
-        label: 'Low Cost (< ₹500)',
-        style: 'bg-blue-100 text-blue-800 border-blue-300',
-      };
-    case 'EQUIPMENT':
-      return {
-        label: 'Appliance / Setup',
-        style: 'bg-purple-100 text-purple-800 border-purple-300',
-      };
-  }
-}
-
 export default function RoomActionCard({ result }: RoomActionCardProps) {
   const { saveAction, t } = useAirqua();
   const [completedChecklist, setCompletedChecklist] = useState<Record<number, boolean>>({});
@@ -87,7 +46,6 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
   };
 
   const handleSaveToPlan = () => {
-    // Save highest risk findings to the user's action plan
     result.findings.forEach((finding) => {
       saveAction({
         headline: `[${finding.riskLevel} Risk] ${finding.item}`,
@@ -106,7 +64,6 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
       aria-label="Room and Smog Audit Results"
       className="flex flex-col gap-6"
     >
-      {/* 1. Audit Header Card */}
       <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-xs flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -133,9 +90,9 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
                   </span>
                 )}
               </div>
-              <h3 className="font-display font-bold text-[18px] text-on-surface">
+              <h2 className="font-display font-bold text-[18px] text-on-surface">
                 {result.sceneType.replace('_', ' ')}
-              </h3>
+              </h2>
             </div>
           </div>
 
@@ -170,7 +127,6 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
         </p>
       </div>
 
-      {/* 2. Mandatory Scientific Sensor Boundary Notice */}
       <div
         role="note"
         aria-label="Sensor Boundary Notice"
@@ -188,78 +144,34 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
         </div>
       </div>
 
-      {/* 3. Prioritized Findings */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h4 className="font-display font-bold text-[16px] text-on-surface">
-            Prioritized Risk Findings & Practical Fixes
-          </h4>
+          <h3 className="font-display font-bold text-[16px] text-on-surface">
+            Prioritized Risk Findings &amp; Practical Fixes
+          </h3>
           <span className="text-[11px] font-mono text-on-surface-variant">
             {result.findings.length} Factors Identified
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {result.findings.map((finding, idx) => {
-            const risk = getRiskStyle(finding.riskLevel);
-            const cost = getCostBadge(finding.estimatedCost);
-
-            return (
-              <div
-                key={idx}
-                className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5 shadow-xs flex flex-col justify-between gap-4"
-              >
-                <div className="flex flex-col gap-3">
-                  {/* Top Badges */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-wider ${risk.container}`}
-                    >
-                      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                      {finding.riskLevel} RISK
-                    </span>
-
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium border ${cost.style}`}
-                    >
-                      <Tag className="h-3 w-3" aria-hidden="true" />
-                      {cost.label}
-                    </span>
-                  </div>
-
-                  <h5 className="font-bold text-[15px] text-on-surface leading-snug">
-                    {finding.item}
-                  </h5>
-
-                  {/* Mechanism Explanation */}
-                  <div className="text-[12px] text-on-surface-variant leading-relaxed">
-                    <strong className="text-on-surface font-semibold">
-                      {t.roomScan.mechanismLabel}{' '}
-                    </strong>
-                    {finding.mechanism}
-                  </div>
-                </div>
-
-                {/* Practical Fix Callout */}
-                <div className="rounded-lg bg-surface-container-low border border-outline-variant/60 p-3 text-[12px] text-on-surface flex flex-col gap-1">
-                  <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
-                    {t.roomScan.fixLabel}
-                  </span>
-                  <p className="leading-relaxed font-medium">{finding.practicalFix}</p>
-                </div>
-              </div>
-            );
-          })}
+          {result.findings.map((finding, idx) => (
+            <FindingItemCard
+              key={idx}
+              finding={finding}
+              mechanismLabel={t.roomScan.mechanismLabel}
+              fixLabel={t.roomScan.fixLabel}
+            />
+          ))}
         </div>
       </div>
 
-      {/* 4. Quick Action Checklist */}
       {result.quickChecklist && result.quickChecklist.length > 0 && (
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-xs flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-display font-bold text-[16px] text-on-surface">
+            <h3 className="font-display font-bold text-[16px] text-on-surface">
               {t.roomScan.checklistHeading}
-            </h4>
+            </h3>
             <span className="text-[11px] font-mono text-on-surface-variant">
               {Object.values(completedChecklist).filter(Boolean).length} of{' '}
               {result.quickChecklist.length} completed

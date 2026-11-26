@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { parseJsonBody } from '@/lib/api/http';
 import { runImpactSimulation } from '@/lib/emissions/simulatorEngine';
 import { HouseholdPersona, SimulatorToggleId } from '@/types/airqua';
 
@@ -28,32 +29,27 @@ const SimulateRequestSchema = z.object({
   safeWindowPm25: z.number().min(0).max(1000).optional().default(60),
 });
 
+/**
+ * Deterministically evaluates Personal Exposure Shift and Emissions Impact (kg CO2e).
+ */
 export async function POST(request: NextRequest) {
-  let body: any;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const parseResult = SimulateRequestSchema.safeParse(body);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: 'Invalid simulation parameters', details: parseResult.error.format() },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(
+    request,
+    SimulateRequestSchema,
+    'Invalid simulation parameters'
+  );
+  if ('errorResponse' in parsed) return parsed.errorResponse;
 
   const result = runImpactSimulation({
-    activeToggles: parseResult.data.activeToggles as SimulatorToggleId[],
-    persona: parseResult.data.persona as HouseholdPersona,
-    vehicleSegment: parseResult.data.vehicleSegment,
-    timeHorizon: parseResult.data.timeHorizon,
-    commuteDistanceKm: parseResult.data.commuteDistanceKm,
-    carpoolOccupancy: parseResult.data.carpoolOccupancy,
-    savedErrandKm: parseResult.data.savedErrandKm,
-    currentPeakPm25: parseResult.data.currentPeakPm25,
-    safeWindowPm25: parseResult.data.safeWindowPm25,
+    activeToggles: parsed.data.activeToggles as SimulatorToggleId[],
+    persona: parsed.data.persona as HouseholdPersona,
+    vehicleSegment: parsed.data.vehicleSegment,
+    timeHorizon: parsed.data.timeHorizon,
+    commuteDistanceKm: parsed.data.commuteDistanceKm,
+    carpoolOccupancy: parsed.data.carpoolOccupancy,
+    savedErrandKm: parsed.data.savedErrandKm,
+    currentPeakPm25: parsed.data.currentPeakPm25,
+    safeWindowPm25: parsed.data.safeWindowPm25,
   });
 
   return NextResponse.json({ result });

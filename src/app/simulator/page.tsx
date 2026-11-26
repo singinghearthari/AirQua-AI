@@ -2,22 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  SlidersHorizontal,
-  Sparkles,
-  MapPin,
-  BookmarkPlus,
-  Check,
-  Bot,
-  ArrowRight,
-  TrendingDown,
-  Leaf,
-} from 'lucide-react';
+import { MapPin, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useAirqua } from '@/context/AirquaContext';
 import { useAuth } from '@/context/AuthContext';
 import { saveActivityHistory } from '@/lib/firebase/userStore';
 import {
-  HouseholdPersona,
   SimulatorToggleId,
   TimeHorizon,
   VehicleSegmentId,
@@ -27,6 +16,30 @@ import { runImpactSimulation } from '@/lib/emissions/simulatorEngine';
 import RoutineToggleList from '@/components/simulator/RoutineToggleList';
 import DualImpactMeters from '@/components/simulator/DualImpactMeters';
 import MathAssumptionsDrawer from '@/components/simulator/MathAssumptionsDrawer';
+import SimulatorCommitBar from '@/components/simulator/SimulatorCommitBar';
+
+const SWAP_PLAN_METADATA: Record<SimulatorToggleId, { title: string; desc: string }> = {
+  SHIFT_OUTDOOR_TO_SAFE_WINDOW: {
+    title: 'Shift Outdoor Tasks to Safe Window',
+    desc: 'Reschedule jogging/errands to the verified 24h safe window to avoid peak smog.',
+  },
+  CAR_TO_TRANSIT: {
+    title: 'Switch Solo Car Commute to Metro',
+    desc: 'Take mass transit to isolate from roadside plumes and reduce tailpipe CO2e.',
+  },
+  CARPOOL: {
+    title: 'Carpool / Shared Commute',
+    desc: 'Split vehicle trips with 2+ occupants to cut per-capita emissions.',
+  },
+  CONSOLIDATE_TRIPS: {
+    title: 'Consolidate Weekly Errands',
+    desc: 'Group neighborhood shopping to avoid cold-start vehicle trips.',
+  },
+  KITCHEN_VENTILATION: {
+    title: 'Kitchen Exhaust During High-Heat Cooking',
+    desc: 'Run range hood/exhaust fan during tadka/frying to remove indoor particulate bursts.',
+  },
+};
 
 export default function SimulatorPage() {
   const router = useRouter();
@@ -34,22 +47,16 @@ export default function SimulatorPage() {
   const { user } = useAuth();
   const [isSavedToPlan, setIsSavedToPlan] = useState(false);
 
-  // Initialize toggles from persona defaults and track previous persona for clean adjustment
   const [prevPersona, setPrevPersona] = useState(persona);
   const [activeToggles, setActiveToggles] = useState<SimulatorToggleId[]>(() =>
     getDefaultTogglesForPersona(persona) as SimulatorToggleId[]
   );
-
-  // Vehicle segment & time horizon state
   const [vehicleSegment, setVehicleSegment] = useState<VehicleSegmentId>('MIDSIZE_SEDAN');
   const [timeHorizon, setTimeHorizon] = useState<TimeHorizon>('DAY');
-
-  // Input slider states
   const [commuteDistanceKm, setCommuteDistanceKm] = useState(15);
   const [carpoolOccupancy, setCarpoolOccupancy] = useState(2);
   const [savedErrandKm, setSavedErrandKm] = useState(5);
 
-  // Sync default toggles whenever the user switches persona in the global header
   if (persona !== prevPersona) {
     setPrevPersona(persona);
     setActiveToggles(getDefaultTogglesForPersona(persona) as SimulatorToggleId[]);
@@ -58,12 +65,9 @@ export default function SimulatorPage() {
 
   const handleToggle = (id: SimulatorToggleId) => {
     setIsSavedToPlan(false);
-    setActiveToggles((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((tId) => tId !== id);
-      }
-      return [...prev, id];
-    });
+    setActiveToggles((prev) =>
+      prev.includes(id) ? prev.filter((tId) => tId !== id) : [...prev, id]
+    );
   };
 
   const handleResetToDefaults = () => {
@@ -77,31 +81,8 @@ export default function SimulatorPage() {
   };
 
   const handleCommitSwapsToPlan = () => {
-    const titles: Record<SimulatorToggleId, { title: string; desc: string }> = {
-      SHIFT_OUTDOOR_TO_SAFE_WINDOW: {
-        title: 'Shift Outdoor Tasks to Safe Window',
-        desc: 'Reschedule jogging/errands to the verified 24h safe window to avoid peak smog.',
-      },
-      CAR_TO_TRANSIT: {
-        title: 'Switch Solo Car Commute to Metro',
-        desc: 'Take mass transit to isolate from roadside plumes and reduce tailpipe CO2e.',
-      },
-      CARPOOL: {
-        title: 'Carpool / Shared Commute',
-        desc: 'Split vehicle trips with 2+ occupants to cut per-capita emissions.',
-      },
-      CONSOLIDATE_TRIPS: {
-        title: 'Consolidate Weekly Errands',
-        desc: 'Group neighborhood shopping to avoid cold-start vehicle trips.',
-      },
-      KITCHEN_VENTILATION: {
-        title: 'Kitchen Exhaust During High-Heat Cooking',
-        desc: 'Run range hood/exhaust fan during tadka/frying to remove indoor particulate bursts.',
-      },
-    };
-
     activeToggles.forEach((toggleId) => {
-      const meta = titles[toggleId];
+      const meta = SWAP_PLAN_METADATA[toggleId];
       if (meta) {
         saveAction({
           headline: `[${city.name}] ${meta.title}`,
@@ -112,18 +93,18 @@ export default function SimulatorPage() {
         });
       }
     });
-
     setIsSavedToPlan(true);
   };
 
   const handleAskAIConsultant = () => {
     try {
       localStorage.setItem('airqua_simulator_swaps_v2', JSON.stringify(activeToggles));
-    } catch {}
+    } catch {
+      // Ignore storage failures
+    }
     router.push('/assistant');
   };
 
-  // Extract live local PM2.5 metrics if available for realistic exposure scaling
   const currentPeakPm25 =
     safeWindows?.peakSmogWindow?.avgPm25 ??
     (snapshot?.pollutants.find((p) => p.code === 'PM2_5')?.value || 180);
@@ -133,9 +114,20 @@ export default function SimulatorPage() {
     safeWindows?.bestVentilationWindow?.avgPm25 ??
     60;
 
-  // 100% deterministic mathematical execution (0ms latency, zero LLM guesswork)
-  const simulationResult = useMemo(() => {
-    return runImpactSimulation({
+  const simulationResult = useMemo(
+    () =>
+      runImpactSimulation({
+        activeToggles,
+        persona,
+        vehicleSegment,
+        timeHorizon,
+        commuteDistanceKm,
+        carpoolOccupancy,
+        savedErrandKm,
+        currentPeakPm25,
+        safeWindowPm25,
+      }),
+    [
       activeToggles,
       persona,
       vehicleSegment,
@@ -145,27 +137,17 @@ export default function SimulatorPage() {
       savedErrandKm,
       currentPeakPm25,
       safeWindowPm25,
-    });
-  }, [
-    activeToggles,
-    persona,
-    vehicleSegment,
-    timeHorizon,
-    commuteDistanceKm,
-    carpoolOccupancy,
-    savedErrandKm,
-    currentPeakPm25,
-    safeWindowPm25,
-  ]);
+    ]
+  );
 
-  // Sync simulator routine toggles to localStorage for cross-screen AI consultant awareness
   useEffect(() => {
     try {
       localStorage.setItem('airqua_simulator_swaps_v2', JSON.stringify(activeToggles));
-    } catch {}
+    } catch {
+      // Ignore storage failures
+    }
   }, [activeToggles]);
 
-  // Record simulation activity snapshot in Firestore when user is signed in (debounced)
   useEffect(() => {
     if (!user?.uid || activeToggles.length === 0) return;
     const timer = setTimeout(() => {
@@ -196,7 +178,6 @@ export default function SimulatorPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 1. Header with Active Profile and Location Context */}
       <section
         aria-label="Simulator Overview"
         className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -229,74 +210,18 @@ export default function SimulatorPage() {
         </div>
       </section>
 
-      {/* 2. Dual Impact Meters (Card A & Card B Strictly Separate) */}
       <section aria-label="Dual Impact Output Meters">
         <DualImpactMeters simulation={simulationResult} />
       </section>
 
-      {/* 3. Routine Action Bar: Commit Swaps & Ask AI Consultant */}
-      {activeToggles.length > 0 && (
-        <section
-          aria-label="Commit Routine Swaps to Today's Plan"
-          className="rounded-xl border border-primary/30 bg-primary-container/20 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3"
-        >
-          <div className="flex flex-col text-center sm:text-left">
-            <span className="font-bold text-[14px] text-on-surface flex items-center gap-2 justify-center sm:justify-start">
-              <span>Commit to these {activeToggles.length} Simulated Swaps?</span>
-              {simulationResult.emissionsImpact.co2eMaxKg > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20">
-                  <Leaf className="h-3 w-3" aria-hidden="true" />
-                  {simulationResult.emissionsImpact.co2eMinKg.toFixed(2)}–{simulationResult.emissionsImpact.co2eMaxKg.toFixed(2)} {simulationResult.emissionsImpact.unit} saved
-                </span>
-              )}
-            </span>
-            <span className="text-[12px] text-on-surface-variant mt-0.5">
-              Add to Today&apos;s Saved Routine checklist to track your personal exposure and emissions progress.
-            </span>
-          </div>
+      <SimulatorCommitBar
+        activeCount={activeToggles.length}
+        emissionsImpact={simulationResult.emissionsImpact}
+        isSavedToPlan={isSavedToPlan}
+        onAskAIConsultant={handleAskAIConsultant}
+        onCommitSwaps={handleCommitSwapsToPlan}
+      />
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {/* Ask AI Consultant Button */}
-            <button
-              type="button"
-              onClick={handleAskAIConsultant}
-              aria-label="Ask AI Consultant about this routine plan in assistant"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-surface hover:bg-surface-container px-3.5 py-2 text-[12px] font-semibold text-primary transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
-            >
-              <Bot className="h-4 w-4" aria-hidden="true" />
-              <span>Ask AI Consultant</span>
-              <ArrowRight className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
-            </button>
-
-            {/* Commit Swaps to Today's Plan Button */}
-            <button
-              type="button"
-              onClick={handleCommitSwapsToPlan}
-              disabled={isSavedToPlan}
-              aria-label="Commit swaps to today's plan checklist"
-              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-bold shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none cursor-pointer ${
-                isSavedToPlan
-                  ? 'bg-emerald-600 text-white cursor-default'
-                  : 'bg-primary hover:bg-primary/90 text-on-primary'
-              }`}
-            >
-              {isSavedToPlan ? (
-                <>
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  <span>Added to Routine!</span>
-                </>
-              ) : (
-                <>
-                  <BookmarkPlus className="h-4 w-4" aria-hidden="true" />
-                  <span>Commit Swaps to Today&apos;s Plan</span>
-                </>
-              )}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* 4. Routine Toggle List */}
       <section aria-label="Routine Swaps Selection and Parameters">
         <RoutineToggleList
           activeToggles={activeToggles}
@@ -316,7 +241,6 @@ export default function SimulatorPage() {
         />
       </section>
 
-      {/* 5. Accessible Math & Assumptions Drawer */}
       <section aria-label="Mathematical Model and Emission Factor Assumptions">
         <MathAssumptionsDrawer simulation={simulationResult} />
       </section>

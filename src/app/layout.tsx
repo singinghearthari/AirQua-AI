@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Root Next.js App Router layout providing authentication, telemetry context,
+ * keyboard skip-link navigation, and global header/footer landmarks.
+ */
 export default function RootLayout({
   children,
 }: {
@@ -23,26 +27,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Red+Hat+Mono:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body
         suppressHydrationWarning
         className="min-h-screen flex flex-col bg-surface text-on-surface font-body antialiased selection:bg-primary-container selection:text-on-primary-container"
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-[13px] focus:font-semibold focus:text-on-primary focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          Skip to main content
+        </a>
         <AuthProvider>
           <AirquaProvider>
             <HeaderNav />
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 focus:outline-none"
+            >
               {children}
             </main>
             <FooterBar />

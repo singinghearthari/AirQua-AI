@@ -105,9 +105,9 @@ export default function SamplePhotoPicker({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-          <h3 className="font-display font-semibold text-[13px] text-on-surface">
+          <h2 className="font-display font-semibold text-[13px] text-on-surface">
             1-Click Evaluator Samples
-          </h3>
+          </h2>
         </div>
         <span className="text-[11px] font-mono text-on-surface-variant">
           Click any photo to test Gemini Vision instantly
@@ -160,9 +160,9 @@ export default function SamplePhotoPicker({
               </div>
 
               <div>
-                <h4 className="font-semibold text-[13px] text-on-surface leading-tight">
+                <h3 className="font-semibold text-[13px] text-on-surface leading-tight">
                   {sample.title}
-                </h4>
+                </h3>
                 <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">
                   {sample.subtitle}
                 </p>

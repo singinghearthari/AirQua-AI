@@ -36,9 +36,9 @@ export default function DashboardPage() {
       >
         <div className="flex items-center gap-2.5">
           <AlertTriangle className="h-6 w-6 text-error shrink-0" aria-hidden="true" />
-          <h2 className="font-display font-bold text-[18px]">
+          <h1 className="font-display font-bold text-[18px]">
             Unable to Load Air Quality Telemetry
-          </h2>
+          </h1>
         </div>
         <p className="text-[13px] leading-relaxed max-w-xl">
           {airError}. Please verify your network connection or try selecting a different Indian city.

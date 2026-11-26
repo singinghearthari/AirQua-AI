@@ -41,4 +41,15 @@ describe('Data Freshness Evaluator', () => {
     expect(diffMin).toBeGreaterThanOrEqual(118);
     expect(diffMin).toBeLessThanOrEqual(122);
   });
+
+  it('respects exact 60-minute and 180-minute boundary thresholds', () => {
+    const justUnder60m = new Date(Date.now() - 59 * 60 * 1000).toISOString();
+    expect(evaluateFreshness(justUnder60m).freshness).toBe('FRESH');
+
+    const over60m = new Date(Date.now() - 61 * 60 * 1000).toISOString();
+    expect(evaluateFreshness(over60m).freshness).toBe('STALE');
+
+    const over180m = new Date(Date.now() - 181 * 60 * 1000).toISOString();
+    expect(evaluateFreshness(over180m).freshness).toBe('UNAVAILABLE');
+  });
 });

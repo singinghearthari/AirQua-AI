@@ -2,9 +2,22 @@ import Groq from 'groq-sdk';
 
 let cachedGroqClient: Groq | null = null;
 
+interface ErrorShape {
+  status?: unknown;
+  statusCode?: unknown;
+  code?: unknown;
+  statusText?: unknown;
+  message?: unknown;
+  response?: {
+    status?: unknown;
+  };
+}
+
 /**
- * Returns a server-only instance of the Groq client.
- * Strictly server-side: never exposed to client-side code.
+ * Returns a strictly server-side singleton instance of the Groq SDK client.
+ * Returns `null` when `GROQ_API_KEY` is not configured so callers can degrade gracefully.
+ *
+ * @throws Error if called inside a browser runtime.
  */
 export function getGroqClient(): Groq | null {
   if (typeof window !== 'undefined') {
@@ -19,7 +32,7 @@ export function getGroqClient(): Groq | null {
   if (!cachedGroqClient) {
     cachedGroqClient = new Groq({
       apiKey,
-      timeout: 15000, // 15-second timeout guardrail
+      timeout: 15000,
     });
   }
 
@@ -27,19 +40,26 @@ export function getGroqClient(): Groq | null {
 }
 
 /**
- * Detects if an error is a rate limit, quota exhaustion (HTTP 429 / RESOURCE_EXHAUSTED),
- * transient service overload (503), or timeout from primary AI providers (Google Gemini).
+ * Determines whether an upstream AI provider error warrants automatic failover
+ * (HTTP 429 quota/rate-limit, `RESOURCE_EXHAUSTED`, HTTP 503 overload, or request timeout).
  */
-export function isQuotaOrRateLimitError(err: any): boolean {
+export function isQuotaOrRateLimitError(err: unknown): boolean {
   if (!err) return false;
 
-  const status = err.status || err.statusCode || err.response?.status;
+  const shape = (typeof err === 'object' ? err : {}) as ErrorShape;
+  const status = shape.status ?? shape.statusCode ?? shape.response?.status;
   if (status === 429 || status === 503) {
     return true;
   }
 
-  const message = (err.message || String(err)).toLowerCase();
-  const code = (err.code || err.statusText || '').toLowerCase();
+  const rawMessage =
+    err instanceof Error
+      ? err.message
+      : typeof shape.message === 'string'
+        ? shape.message
+        : String(err);
+  const message = rawMessage.toLowerCase();
+  const code = String(shape.code ?? shape.statusText ?? '').toLowerCase();
 
   return (
     message.includes('429') ||

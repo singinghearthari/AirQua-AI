@@ -114,11 +114,14 @@ describe('userStore - Cloud Firestore Persistence & Guest Fallbacks', () => {
       );
     });
 
+type DocSnapshot = Awaited<ReturnType<typeof getDoc>>;
+type QuerySnapshot = Awaited<ReturnType<typeof getDocs>>;
+
     it('getUserPreferences parses data when document exists', async () => {
       vi.mocked(getDoc).mockResolvedValueOnce({
         exists: () => true,
         data: () => ({ persona: 'STUDENT_ATHLETE', scale: 'US_EPA' }),
-      } as any);
+      } as unknown as DocSnapshot);
 
       const res = await getUserPreferences('user-456');
       expect(res).toEqual({ persona: 'STUDENT_ATHLETE', scale: 'US_EPA' });
@@ -127,7 +130,7 @@ describe('userStore - Cloud Firestore Persistence & Guest Fallbacks', () => {
     it('getUserPreferences returns null when document does not exist', async () => {
       vi.mocked(getDoc).mockResolvedValueOnce({
         exists: () => false,
-      } as any);
+      } as unknown as DocSnapshot);
 
       const res = await getUserPreferences('user-nonexistent');
       expect(res).toBeNull();
@@ -152,13 +155,13 @@ describe('userStore - Cloud Firestore Persistence & Guest Fallbacks', () => {
 
       // Mock getDocs returning remoteItem
       vi.mocked(getDocs).mockResolvedValueOnce({
-        forEach: (callback: any) => {
+        forEach: (callback: (doc: { id: string; data: () => SavedActionItem }) => void) => {
           callback({
             id: 'remote-1',
             data: () => remoteItem,
           });
         },
-      } as any);
+      } as unknown as QuerySnapshot);
 
       const merged = await syncSavedActions('user-789', [localItem]);
 

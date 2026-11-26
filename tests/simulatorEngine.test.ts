@@ -234,5 +234,19 @@ describe('SimulatorEngine & Strict Exposure vs. Emissions Separation', () => {
       expect(result.emissionsImpact.co2eMinKg).toBe(0.0);
       expect(result.emissionsImpact.co2eMaxKg).toBe(0.0);
     });
+
+    it('keeps emissionsImpact strictly at 0.00 kg CO2e for exposure-only swaps across any horizon', () => {
+      const result = runImpactSimulation({
+        activeToggles: ['SHIFT_OUTDOOR_TO_SAFE_WINDOW', 'KITCHEN_VENTILATION'],
+        persona: 'FAMILY_KIDS',
+        timeHorizon: 'MONTH',
+        currentPeakPm25: 220,
+        safeWindowPm25: 55,
+      });
+
+      expect(result.personalExposure.direction).toBe('LIKELY_LOWER');
+      expect(result.emissionsImpact.co2eMinKg).toBe(0.0);
+      expect(result.emissionsImpact.co2eMaxKg).toBe(0.0);
+    });
   });
 });

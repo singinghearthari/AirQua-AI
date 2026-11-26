@@ -7,9 +7,38 @@ import * as geminiClientModule from '@/lib/gemini/client';
 import * as groqClientModule from '@/lib/ai/groqClient';
 import { NextRequest } from 'next/server';
 
+type GeminiClient = ReturnType<typeof geminiClientModule.getGeminiClient>;
+type GroqClient = NonNullable<ReturnType<typeof groqClientModule.getGroqClient>>;
+
+interface MockGeminiCallArgs {
+  contents: Array<{ parts: Array<{ text?: string }> }>;
+  config?: { systemInstruction?: string };
+}
+
+function asMockGeminiClient(generateContent: ReturnType<typeof vi.fn>): GeminiClient {
+  return { models: { generateContent } } as unknown as GeminiClient;
+}
+
+function asMockGroqClient(create: ReturnType<typeof vi.fn>): GroqClient {
+  return { chat: { completions: { create } } } as unknown as GroqClient;
+}
+
 describe('/api/chat', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('rejects malformed JSON body with status 400', async () => {
+    const req = new NextRequest('http://localhost:3000/api/chat', {
+      method: 'POST',
+      body: '{bad json',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await chatHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/Invalid JSON request body/i);
   });
 
   it('rejects empty message with status 400', async () => {
@@ -58,7 +87,7 @@ describe('/api/chat', () => {
   });
 
   it('returns distinct answers directly tailored to different questions (no repetitive canned responses)', async () => {
-    const mockGenerate = vi.fn().mockImplementation(async ({ contents }: any) => {
+    const mockGenerate = vi.fn().mockImplementation(async ({ contents }: MockGeminiCallArgs) => {
       const userMessage = contents[contents.length - 1]?.parts[0]?.text || '';
 
       if (userMessage.includes('cooking smoke')) {
@@ -107,9 +136,9 @@ describe('/api/chat', () => {
       };
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     // Question 1: Outdoor walking
     const reqWalk = new NextRequest('http://localhost:3000/api/chat', {
@@ -162,7 +191,7 @@ describe('/api/chat', () => {
 
   it('supports cross-screen context injection (Room Scan & Simulator Routines)', async () => {
     let capturedSystemInstruction = '';
-    const mockGenerate = vi.fn().mockImplementation(async ({ config }: any) => {
+    const mockGenerate = vi.fn().mockImplementation(async ({ config }: MockGeminiCallArgs) => {
       capturedSystemInstruction = config?.systemInstruction || '';
       return {
         text: JSON.stringify({
@@ -186,9 +215,9 @@ describe('/api/chat', () => {
       };
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     const req = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -242,9 +271,9 @@ describe('/api/chat', () => {
       }),
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     const req = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -279,9 +308,9 @@ describe('/api/chat', () => {
       text: '```json\n{"answer":"Properly stripped markdown fences.","whyItMatters":"Mechanism.","recommendedActions":[{"title":"Action 1","category":"INDOOR","effort":"QUICK"}],"followUpPrompts":["Q1","Q2"],"provenanceTags":["AI Guidance"]}\n```',
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     const req = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -306,9 +335,9 @@ describe('/api/chat', () => {
         'Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests',
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGeminiGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGeminiGenerate)
+    );
 
     // 2. Groq answers seamlessly
     const mockGroqCreate = vi.fn().mockResolvedValue({
@@ -333,9 +362,9 @@ describe('/api/chat', () => {
       ],
     });
 
-    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue({
-      chat: { completions: { create: mockGroqCreate } },
-    } as any);
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqClient(mockGroqCreate)
+    );
 
     const req = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -364,9 +393,9 @@ describe('/api/chat', () => {
         'Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests',
     });
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     // Groq client is null or fails
     vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(null);
@@ -388,11 +417,13 @@ describe('/api/chat', () => {
   });
 
   it('returns status 502 when AI providers fail due to server error or network failure', async () => {
-    const mockGenerate = vi.fn().mockRejectedValue(new Error('Network connection timeout'));
+    const mockGenerate = vi
+      .fn()
+      .mockRejectedValue(new Error('Upstream provider returned an unrecoverable server error'));
 
-    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue({
-      models: { generateContent: mockGenerate },
-    } as any);
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGenerate)
+    );
 
     vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(null);
 
@@ -410,6 +441,69 @@ describe('/api/chat', () => {
     const json = await res.json();
     expect(json.code).toBe('GEMINI_ERROR');
     expect(json.error).toMatch(/could not reach/i);
+  });
+
+  it('fails over to Groq backup when Gemini throws a transient timeout', async () => {
+    const mockGeminiTimeout = vi.fn().mockRejectedValue(new Error('Request deadline timeout exceeded'));
+    vi.spyOn(geminiClientModule, 'getGeminiClient').mockReturnValue(
+      asMockGeminiClient(mockGeminiTimeout)
+    );
+
+    const mockGroqCreate = vi.fn().mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              answer: 'Recovered via Groq after upstream Gemini timeout.',
+              whyItMatters: 'Failover keeps family protection guidance responsive.',
+              recommendedActions: [
+                { title: 'Close street-facing windows', category: 'INDOOR', effort: 'QUICK' },
+              ],
+              followUpPrompts: ['What is the next safe window?'],
+              provenanceTags: ['AI Guidance'],
+            }),
+          },
+        },
+      ],
+    });
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqClient(mockGroqCreate)
+    );
+
+    const req = new NextRequest('http://localhost:3000/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: 'Should we keep windows closed tonight?',
+        persona: 'FAMILY_KIDS',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await chatHandler(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.aiProvider).toBe('groq-backup');
+    expect(json.reply).toContain('Recovered via Groq');
+  });
+
+  it('enforces per-IP rate limiting with status 429 after 15 requests per minute', async () => {
+    const ip = '198.51.100.22';
+    for (let i = 0; i < 15; i++) {
+      const req = new NextRequest('http://localhost:3000/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
+      });
+      await chatHandler(req);
+    }
+
+    const blockedReq = new NextRequest('http://localhost:3000/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
+    });
+    const blockedRes = await chatHandler(blockedReq);
+    expect(blockedRes.status).toBe(429);
   });
 });
 

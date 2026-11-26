@@ -11,6 +11,34 @@ import SamplePhotoPicker from '@/components/scan/SamplePhotoPicker';
 import RoomActionCard from '@/components/scan/RoomActionCard';
 import { RoomScanSkeleton } from '@/components/shared/SkeletonLoaders';
 
+function recordScanLocallyAndRemote(
+  result: RoomScanResult,
+  persona: string,
+  uid?: string
+): void {
+  try {
+    localStorage.setItem(
+      'airqua_last_room_scan_v2',
+      JSON.stringify({
+        sceneType: result.sceneType,
+        findingsCount: result.findings.length,
+        summary: `${result.sceneType}: ${result.findings.map((f) => f.item).slice(0, 2).join(', ')}`,
+        scannedAt: new Date().toISOString(),
+      })
+    );
+  } catch {
+    // Ignore storage write errors
+  }
+
+  if (uid) {
+    saveActivityHistory(uid, {
+      type: 'ROOM_SCAN',
+      summary: `${result.sceneType}: ${result.findings.length} findings`,
+      details: { sceneType: result.sceneType, findingsCount: result.findings.length, persona },
+    }).catch((err) => console.warn('Failed to record room scan activity:', err));
+  }
+}
+
 export default function RoomScanPage() {
   const { persona, language, t } = useAirqua();
   const { user } = useAuth();
@@ -20,32 +48,16 @@ export default function RoomScanPage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSizeBytes, setFileSizeBytes] = useState<number | null>(null);
   const [activeSampleId, setActiveSampleId] = useState<string | null>(null);
-
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<RoomScanResult | null>(null);
 
-  const handleImageSelected = (
-    dataUrl: string,
+  const applySelection = (
+    dataUrl: string | null,
     mime: 'image/jpeg' | 'image/png' | 'image/webp',
-    sizeBytes: number,
-    name: string
-  ) => {
-    setImageData(dataUrl);
-    setMimeType(mime);
-    setFileSizeBytes(sizeBytes);
-    setFileName(name);
-    setActiveSampleId(null);
-    setScanError(null);
-    setScanResult(null);
-  };
-
-  const handleSelectSample = (
-    dataUrl: string,
-    mime: 'image/jpeg',
-    sizeBytes: number,
-    name: string,
-    sampleId: string
+    sizeBytes: number | null,
+    name: string | null,
+    sampleId: string | null
   ) => {
     setImageData(dataUrl);
     setMimeType(mime);
@@ -56,18 +68,8 @@ export default function RoomScanPage() {
     setScanResult(null);
   };
 
-  const handleClearImage = () => {
-    setImageData(null);
-    setFileName(null);
-    setFileSizeBytes(null);
-    setActiveSampleId(null);
-    setScanResult(null);
-    setScanError(null);
-  };
-
   const handleRunScan = async () => {
     if (!imageData || isAnalyzing) return;
-
     setIsAnalyzing(true);
     setScanError(null);
 
@@ -75,52 +77,21 @@ export default function RoomScanPage() {
       const response = await fetch('/api/room-scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: imageData,
-          mimeType,
-          persona,
-          language,
-        }),
+        body: JSON.stringify({ image: imageData, mimeType, persona, language }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { result?: RoomScanResult; error?: string };
+      if (!response.ok) throw new Error(data.error || 'Failed to complete room scan analysis.');
+      if (!data.result) throw new Error('No analysis result returned by service.');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete room scan analysis.');
-      }
-
-      if (data.result) {
-        setScanResult(data.result);
-        try {
-          localStorage.setItem(
-            'airqua_last_room_scan_v2',
-            JSON.stringify({
-              sceneType: data.result.sceneType,
-              findingsCount: data.result.findings.length,
-              summary: `${data.result.sceneType}: ${data.result.findings.map((f: any) => f.item).slice(0, 2).join(', ')}`,
-              scannedAt: new Date().toISOString(),
-            })
-          );
-        } catch {}
-
-        if (user?.uid) {
-          saveActivityHistory(user.uid, {
-            type: 'ROOM_SCAN',
-            summary: `${data.result.sceneType}: ${data.result.findings.length} findings`,
-            details: {
-              sceneType: data.result.sceneType,
-              findingsCount: data.result.findings.length,
-              persona,
-            },
-          }).catch((err) => console.warn('Failed to record room scan activity:', err));
-        }
-      } else {
-        throw new Error('No analysis result returned by service.');
-      }
-    } catch (err: any) {
+      setScanResult(data.result);
+      recordScanLocallyAndRemote(data.result, persona, user?.uid);
+    } catch (err: unknown) {
       console.error('Room scan failed:', err);
       setScanError(
-        err.message || 'An unexpected error occurred during visual inspection. Please try again.'
+        err instanceof Error
+          ? err.message
+          : 'An unexpected error occurred during visual inspection. Please try again.'
       );
     } finally {
       setIsAnalyzing(false);
@@ -129,7 +100,6 @@ export default function RoomScanPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 1. Header & Active Persona Banner */}
       <section
         aria-label="Room and Smog Inspection Overview"
         className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -157,29 +127,30 @@ export default function RoomScanPage() {
         </div>
       </section>
 
-      {/* 2. 1-Click Evaluator Sample Photos */}
       <section aria-label="Sample Evaluation Photos">
         <SamplePhotoPicker
-          onSelectSample={handleSelectSample}
+          onSelectSample={(dataUrl, mime, size, name, sampleId) =>
+            applySelection(dataUrl, mime, size, name, sampleId)
+          }
           activeSampleId={activeSampleId}
           isLoading={isAnalyzing}
         />
       </section>
 
-      {/* 3. Drag and Drop Uploader */}
       <section aria-label="Upload Photo for Inspection">
         <ImageUploader
           selectedImage={imageData}
           fileName={fileName}
           fileSizeBytes={fileSizeBytes}
-          onImageSelected={handleImageSelected}
-          onClearImage={handleClearImage}
+          onImageSelected={(dataUrl, mime, size, name) =>
+            applySelection(dataUrl, mime, size, name, null)
+          }
+          onClearImage={() => applySelection(null, 'image/jpeg', null, null, null)}
           isLoading={isAnalyzing}
           error={scanError}
         />
       </section>
 
-      {/* 4. Action CTA Button */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-xs">
         <div className="text-[12px] text-on-surface-variant">
           {imageData ? (
@@ -212,10 +183,8 @@ export default function RoomScanPage() {
         </button>
       </div>
 
-      {/* 5. Analysis Progress / Loading Skeleton */}
       {isAnalyzing && <RoomScanSkeleton />}
 
-      {/* 6. Error Notice */}
       {scanError && !isAnalyzing && (
         <div
           role="alert"
@@ -239,7 +208,6 @@ export default function RoomScanPage() {
         </div>
       )}
 
-      {/* 7. Structured Audit Results Card */}
       {scanResult && !isAnalyzing && (
         <section aria-label="Visual Audit Findings and Practical Fixes">
           <RoomActionCard result={scanResult} />

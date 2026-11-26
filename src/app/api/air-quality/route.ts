@@ -1,36 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getErrorMessage, jsonError } from '@/lib/api/http';
 import { getAirQualityData } from '@/lib/aqi/adapter';
 
 export const runtime = 'nodejs';
 
+const CoordinateString = (min: number, max: number, label: string) =>
+  z.string({ required_error: `${label} is required` }).transform((val, ctx) => {
+    const num = Number(val);
+    if (isNaN(num) || num < min || num > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${label} must be a valid number between ${min} and ${max}`,
+      });
+      return z.NEVER;
+    }
+    return num;
+  });
+
 const QuerySchema = z.object({
-  lat: z
-    .string({ required_error: 'Latitude is required' })
-    .transform((val, ctx) => {
-      const num = Number(val);
-      if (isNaN(num) || num < -90 || num > 90) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Latitude must be a valid number between -90 and 90',
-        });
-        return z.NEVER;
-      }
-      return num;
-    }),
-  lon: z
-    .string({ required_error: 'Longitude is required' })
-    .transform((val, ctx) => {
-      const num = Number(val);
-      if (isNaN(num) || num < -180 || num > 180) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Longitude must be a valid number between -180 and 180',
-        });
-        return z.NEVER;
-      }
-      return num;
-    }),
+  lat: CoordinateString(-90, 90, 'Latitude'),
+  lon: CoordinateString(-180, 180, 'Longitude'),
   name: z.string().optional().default('Selected Location'),
   region: z.string().optional(),
   countryCode: z.string().optional().default('IN'),
@@ -45,10 +35,14 @@ const QuerySchema = z.object({
     .transform((val) => val === 'true'),
 });
 
+/**
+ * Fetches live Open-Meteo air quality + weather dispersion telemetry and returns
+ * deterministic CPCB/US AQI scores, 24h safe windows, and persona daily guidance.
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  const rawParams = {
+  const parseResult = QuerySchema.safeParse({
     lat: searchParams.get('lat') ?? undefined,
     lon: searchParams.get('lon') ?? undefined,
     name: searchParams.get('name') ?? undefined,
@@ -57,18 +51,12 @@ export async function GET(request: NextRequest) {
     scale: searchParams.get('scale') ?? undefined,
     persona: searchParams.get('persona') ?? undefined,
     simulateStale: searchParams.get('simulateStale') ?? undefined,
-  };
-
-  const parseResult = QuerySchema.safeParse(rawParams);
+  });
 
   if (!parseResult.success) {
-    return NextResponse.json(
-      {
-        error: 'Invalid air quality query parameters',
-        details: parseResult.error.format(),
-      },
-      { status: 400 }
-    );
+    return jsonError('Invalid air quality query parameters', 400, {
+      details: parseResult.error.format(),
+    });
   }
 
   const { lat, lon, name, region, countryCode, scale, persona, simulateStale } =
@@ -91,14 +79,10 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=60',
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in /api/air-quality:', error);
-    return NextResponse.json(
-      {
-        error: 'Unable to retrieve live air quality telemetry from Open-Meteo',
-        message: error instanceof Error ? error.message : 'Unknown network failure',
-      },
-      { status: 502 }
-    );
+    return jsonError('Unable to retrieve live air quality telemetry from Open-Meteo', 502, {
+      extra: { message: getErrorMessage(error, 'Unknown network failure') },
+    });
   }
 }

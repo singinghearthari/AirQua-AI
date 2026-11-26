@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/**
+ * Zod schema validating an individual Room & Smog Scan finding card.
+ */
 export const RoomScanFindingSchema = z.object({
   item: z.string().min(1, 'Item title is required'),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']),
@@ -8,6 +11,9 @@ export const RoomScanFindingSchema = z.object({
   estimatedCost: z.enum(['FREE', 'LOW_COST', 'EQUIPMENT']),
 });
 
+/**
+ * Zod schema validating the full Room & Smog Scan JSON output from Gemini or Groq Vision.
+ */
 export const RoomScanResultSchema = z.object({
   sceneType: z.enum(['KITCHEN', 'BEDROOM', 'LIVING_AREA', 'OUTDOOR_SKY', 'OTHER']),
   confidenceNote: z.string().min(1),
@@ -20,6 +26,9 @@ export const RoomScanResultSchema = z.object({
 export type RoomScanFindingParsed = z.infer<typeof RoomScanFindingSchema>;
 export type RoomScanResultParsed = z.infer<typeof RoomScanResultSchema>;
 
+/**
+ * Strips Markdown JSON code fences (e.g. ```json ... ```) from LLM output before `JSON.parse`.
+ */
 export function stripJsonCodeFences(raw: string): string {
   if (!raw) return '{}';
   const trimmed = raw.trim();
@@ -33,6 +42,9 @@ export function stripJsonCodeFences(raw: string): string {
   return trimmed;
 }
 
+/**
+ * Zod schema validating a single structured action recommended by the AI Consultant.
+ */
 export const RecommendedActionSchema = z.object({
   title: z.string().min(1, 'Action title is required'),
   category: z
@@ -49,6 +61,9 @@ export const RecommendedActionSchema = z.object({
     .catch('QUICK'),
 });
 
+/**
+ * Zod schema validating structured JSON responses returned by the Bilingual AI Consultant.
+ */
 export const ConsultantResponseSchema = z.object({
   answer: z.string().min(1, 'Direct answer is required'),
   whyItMatters: z
