@@ -5,14 +5,9 @@ import {
   enforceRateLimit,
   getErrorMessage,
   jsonError,
-  jsonOk,
   parseJsonBody,
 } from '@/lib/api/http';
-import {
-  detectMessageLanguage,
-  stripMarkdownForSpeech,
-} from '@/lib/voice/speechUtils';
-import { synthesizeTamilMpegAudio } from '@/lib/voice/tamilTts';
+import { stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
 
 export const runtime = 'nodejs';
 
@@ -22,8 +17,8 @@ const SpeakRequestSchema = z.object({
 });
 
 /**
- * Synthesizes spoken replies: Tamil (`ta`) via chunked `audio/mpeg` server synthesis with safe
- * browser-TTS fallback signaling, and English (`en`) via Groq Orpheus `audio/wav`.
+ * Synthesizes English speech via Groq Orpheus neural TTS and gracefully signals
+ * browser SpeechSynthesis fallback for Tamil (`ta`) or unavailable upstream service.
  */
 export async function POST(request: NextRequest) {
   const rateLimitResponse = enforceRateLimit(
@@ -44,41 +39,18 @@ export async function POST(request: NextRequest) {
     return jsonError('Text was empty after sanitization', 400);
   }
 
-  const effectiveLang =
-    language === 'ta' || detectMessageLanguage(cleanText) === 'ta' ? 'ta' : 'en';
-
-  if (effectiveLang === 'ta') {
-    try {
-      const mpegBuffer = await synthesizeTamilMpegAudio(cleanText);
-      return new NextResponse(mpegBuffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': mpegBuffer.byteLength.toString(),
-          'Cache-Control': 'public, max-age=3600',
-          'X-Content-Type-Options': 'nosniff',
-        },
-      });
-    } catch (err: unknown) {
-      const message = getErrorMessage(err, 'Tamil TTS upstream unavailable');
-      console.warn('[api/voice/speak] Tamil server TTS failed, signaling fallback:', message);
-      return jsonOk({
-        fallback: 'browser-tts',
-        fallbackToBrowserTTS: true,
-        language: 'ta',
-        reason: message,
-      });
-    }
-  }
-
   const groq = getGroqClient();
-  if (!groq) {
-    return jsonOk({
-      fallback: 'browser-tts',
-      fallbackToBrowserTTS: true,
-      language: 'en',
-      reason: 'Groq API key unconfigured',
-    });
+  if (language === 'ta' || !groq) {
+    return NextResponse.json(
+      {
+        fallbackToBrowserTTS: true,
+        reason:
+          language === 'ta'
+            ? 'Tamil speech synthesis uses native Indian Tamil neural voices in browser'
+            : 'Groq API key unconfigured',
+      },
+      { status: 200 }
+    );
   }
 
   try {
@@ -97,7 +69,6 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'audio/wav',
         'Content-Length': arrayBuffer.byteLength.toString(),
         'Cache-Control': 'public, max-age=3600',
-        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (err: unknown) {
@@ -107,11 +78,12 @@ export async function POST(request: NextRequest) {
       message
     );
 
-    return jsonOk({
-      fallback: 'browser-tts',
-      fallbackToBrowserTTS: true,
-      language: 'en',
-      reason: message,
-    });
+    return NextResponse.json(
+      {
+        fallbackToBrowserTTS: true,
+        reason: message,
+      },
+      { status: 200 }
+    );
   }
 }

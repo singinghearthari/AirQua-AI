@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getErrorMessage, jsonError, jsonOk } from '@/lib/api/http';
+import { getErrorMessage, jsonError } from '@/lib/api/http';
 import { getAirQualityData } from '@/lib/aqi/adapter';
 
 export const runtime = 'nodejs';
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       simulateStale,
     });
 
-    return jsonOk(result, {
+    return NextResponse.json(result, {
       headers: {
         'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=60',
       },

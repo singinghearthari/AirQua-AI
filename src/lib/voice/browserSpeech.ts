@@ -1,4 +1,11 @@
-import { SupportedLanguage } from '@/types/airqua';
+const TAMIL_UNICODE_REGEX = /[\u0B80-\u0BFF]/;
+const VOICE_WAIT_TIMEOUT_MS = 150;
+
+export interface SpeechVoiceLike {
+  name: string;
+  lang: string;
+  default?: boolean;
+}
 
 export interface SpeechRecognitionResultAlternativeLike {
   transcript: string;
@@ -40,6 +47,23 @@ interface SpeechWindow extends Window {
   msSpeechRecognition?: SpeechRecognitionConstructor;
 }
 
+export interface SpeakBrowserOptions {
+  synth: SpeechSynthesis | null;
+  cleanText: string;
+  preferredVoice?: SpeechSynthesisVoice | null;
+  rate?: number;
+  pitch?: number;
+  onStart: () => void;
+  onDone: () => void;
+}
+
+/**
+ * Returns true when the text contains any Tamil script codepoints (`U+0B80..U+0BFF`).
+ */
+export function containsTamilUnicode(text: string): boolean {
+  return TAMIL_UNICODE_REGEX.test(text);
+}
+
 /**
  * Resolves a constructor for the Web Speech API `SpeechRecognition` across browser prefixes.
  */
@@ -55,95 +79,167 @@ export function getBrowserSpeechRecognition(): SpeechRecognitionConstructor | nu
   );
 }
 
-/**
- * Awaits asynchronous voice list population (`voiceschanged`) when `synth.getVoices()` initially
- * returns empty in Chromium/Edge browsers, bounded by a short timeout so playback never stalls.
- */
-async function loadVoicesAsync(synth: SpeechSynthesis): Promise<SpeechSynthesisVoice[]> {
-  const initial = synth.getVoices();
-  if (initial.length > 0) return initial;
+function normalizeVoiceLang(lang: string): string {
+  return lang.trim().toLowerCase().replace('_', '-');
+}
 
-  return new Promise<SpeechSynthesisVoice[]>((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      synth.removeEventListener?.('voiceschanged', finish);
-      clearTimeout(timer);
-      resolve(synth.getVoices());
-    };
-    const timer = setTimeout(finish, 450);
-    synth.addEventListener?.('voiceschanged', finish, { once: true });
+/**
+ * Deterministically selects a single bilingual voice used across both Tamil and English replies:
+ * 1) A `ta-IN` / Tamil voice (capable of pronouncing both Tamil and English seamlessly).
+ * 2) An Indian English (`en-IN`) fallback if no Tamil voice is installed.
+ * 3) The browser's default voice (or first available voice).
+ */
+export function selectBilingualSpeechVoice<T extends SpeechVoiceLike>(
+  voices: readonly T[]
+): T | null {
+  if (!voices || voices.length === 0) return null;
+
+  const taInVoices = voices.filter((v) => normalizeVoiceLang(v.lang) === 'ta-in');
+  if (taInVoices.length > 0) {
+    return (
+      taInVoices.find((v) => /google|valluvar|pallavi|natural/i.test(v.name)) ??
+      taInVoices[0]
+    );
+  }
+
+  const anyTaVoice = voices.find((v) => {
+    const lang = normalizeVoiceLang(v.lang);
+    return lang === 'ta' || lang.startsWith('ta-') || v.name.toLowerCase().includes('tamil');
   });
-}
-
-function selectPreferredVoice(
-  voices: SpeechSynthesisVoice[],
-  lang: SupportedLanguage
-): SpeechSynthesisVoice | null {
-  if (lang === 'ta') {
-    const tamilVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('ta'));
-    return tamilVoices.find((v) => v.lang.toLowerCase() === 'ta-in') ?? tamilVoices[0] ?? null;
+  if (anyTaVoice) {
+    return anyTaVoice;
   }
 
-  const englishVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('en'));
-  return (
-    englishVoices.find((v) => v.lang.toLowerCase() === 'en-in') ??
-    englishVoices.find((v) => v.lang.toLowerCase() === 'en-us') ??
-    englishVoices.find((v) => v.default) ??
-    englishVoices[0] ??
-    null
-  );
+  const enInVoices = voices.filter((v) => normalizeVoiceLang(v.lang) === 'en-in');
+  if (enInVoices.length > 0) {
+    return (
+      enInVoices.find((v) => Boolean(v.default)) ??
+      enInVoices.find((v) => /google|heera|ravi|prabhat|neerja|natural/i.test(v.name)) ??
+      enInVoices[0]
+    );
+  }
+
+  return voices.find((v) => Boolean(v.default)) ?? voices[0] ?? null;
 }
 
 /**
- * Speaks sanitized text via the browser `SpeechSynthesis` API in Indian English (`en-IN`/`en-US`) or
- * Tamil (`ta-IN`). Never falls back to a non-Tamil voice for Tamil text so Tamil words are never skipped.
+ * Resolves the `utterance.lang` tag dynamically: `ta-IN` whenever Tamil Unicode script is
+ * present, otherwise the selected voice's `lang` or `en-IN`.
  */
-export async function speakWithBrowserSynthesis(
-  synth: SpeechSynthesis | null,
+export function resolveUtteranceLang(
   cleanText: string,
-  lang: SupportedLanguage,
-  onStart: () => void,
-  onDone: () => void,
-  onVoiceNotice?: (notice: string | null) => void
-): Promise<void> {
-  if (!synth || !cleanText) {
-    if (lang === 'ta') {
-      onVoiceNotice?.('Tamil voice audio is temporarily unavailable on this device');
-    }
-    onDone();
-    return;
+  selectedVoice?: Pick<SpeechVoiceLike, 'lang'> | null
+): string {
+  if (containsTamilUnicode(cleanText)) {
+    return 'ta-IN';
   }
+  const voiceLang = selectedVoice?.lang?.trim();
+  return voiceLang || 'en-IN';
+}
+
+/**
+ * Loads the current Web Speech voice selection and subscribes to async `voiceschanged` events.
+ */
+export function subscribeToVoicesChanged(
+  synth: SpeechSynthesis,
+  onVoiceResolved: (voice: SpeechSynthesisVoice | null) => void
+): () => void {
+  const resolveAndNotify = () => {
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+      onVoiceResolved(selectBilingualSpeechVoice(voices));
+    }
+  };
+
+  resolveAndNotify();
+
+  if (typeof synth.addEventListener === 'function') {
+    synth.addEventListener('voiceschanged', resolveAndNotify);
+    return () => synth.removeEventListener('voiceschanged', resolveAndNotify);
+  }
+
+  synth.onvoiceschanged = resolveAndNotify;
+  return () => {
+    if (synth.onvoiceschanged === resolveAndNotify) {
+      synth.onvoiceschanged = null;
+    }
+  };
+}
+
+/**
+ * Speaks sanitized text via the browser `SpeechSynthesis` API using the unified bilingual voice.
+ * Returns a cancellation callback that aborts any pending async `voiceschanged` wait.
+ */
+export function speakWithBrowserSynthesis({
+  synth,
+  cleanText,
+  preferredVoice = null,
+  rate = 0.96,
+  pitch = 1.0,
+  onStart,
+  onDone,
+}: SpeakBrowserOptions): () => void {
+  if (!synth || !cleanText) {
+    onDone();
+    return () => {};
+  }
+
+  const dispatchUtterance = (voice: SpeechSynthesisVoice | null) => {
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      utterance.lang = resolveUtteranceLang(cleanText, voice);
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.onstart = onStart;
+      utterance.onend = onDone;
+      utterance.onerror = onDone;
+      synth.speak(utterance);
+    } catch (err) {
+      console.warn('Browser SpeechSynthesis error:', err);
+      onDone();
+    }
+  };
 
   try {
     synth.cancel();
-    const voices = await loadVoicesAsync(synth);
-    const preferredVoice = selectPreferredVoice(voices, lang);
-
-    if (lang === 'ta' && !preferredVoice) {
-      onVoiceNotice?.('Tamil voice audio is temporarily unavailable on this device');
-      onDone();
-      return;
+    const initialVoices = synth.getVoices();
+    if (initialVoices.length > 0 || preferredVoice) {
+      const resolved = selectBilingualSpeechVoice(initialVoices) ?? preferredVoice;
+      dispatchUtterance(resolved);
+      return () => {};
     }
 
-    onVoiceNotice?.(null);
+    let settled = false;
+    let removeVoiceListener: () => void = () => {};
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang === 'ta' ? 'ta-IN' : preferredVoice?.lang || 'en-IN';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    const finalize = () => {
+      if (settled) return;
+      settled = true;
+      removeVoiceListener();
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      const resolved = selectBilingualSpeechVoice(synth.getVoices());
+      dispatchUtterance(resolved);
+    };
 
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    if (typeof synth.addEventListener === 'function') {
+      synth.addEventListener('voiceschanged', finalize);
+      removeVoiceListener = () => synth.removeEventListener('voiceschanged', finalize);
     }
 
-    utterance.onstart = onStart;
-    utterance.onend = onDone;
-    utterance.onerror = onDone;
-    synth.speak(utterance);
+    timeoutId = setTimeout(finalize, VOICE_WAIT_TIMEOUT_MS);
+
+    return () => {
+      settled = true;
+      removeVoiceListener();
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   } catch (err) {
     console.warn('Browser SpeechSynthesis error:', err);
     onDone();
+    return () => {};
   }
 }

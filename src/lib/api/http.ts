@@ -40,28 +40,6 @@ export function getClientIp(request: NextRequest): string {
   );
 }
 
-export const API_SECURITY_HEADERS: Record<string, string> = {
-  'X-Content-Type-Options': 'nosniff',
-};
-
-function mergeSecurityHeaders(headers?: HeadersInit): Headers {
-  const merged = new Headers(headers);
-  if (!merged.has('X-Content-Type-Options')) {
-    merged.set('X-Content-Type-Options', API_SECURITY_HEADERS['X-Content-Type-Options']);
-  }
-  return merged;
-}
-
-/**
- * Constructs a standardized JSON success response carrying mandatory `X-Content-Type-Options: nosniff` headers.
- */
-export function jsonOk<T>(data: T, init: ResponseInit = {}): NextResponse {
-  return NextResponse.json(data, {
-    ...init,
-    headers: mergeSecurityHeaders(init.headers),
-  });
-}
-
 /**
  * Constructs a standardized JSON error response with consistent shape.
  */
@@ -79,7 +57,7 @@ export function jsonError(
 
   return NextResponse.json(payload, {
     status,
-    headers: mergeSecurityHeaders(options.headers),
+    headers: options.headers,
   });
 }
 

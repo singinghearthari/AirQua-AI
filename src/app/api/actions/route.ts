@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError, jsonOk, parseJsonBody } from '@/lib/api/http';
+import { fetchWithTimeout, jsonError, parseJsonBody } from '@/lib/api/http';
 import { isFirebaseConfigured } from '@/lib/firebase/client';
 
 export const runtime = 'nodejs';
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   const token = extractBearerToken(request);
 
   if (!token || !isFirebaseConfigured()) {
-    return jsonOk({
+    return NextResponse.json({
       mode: 'GUEST',
       message: 'Guest mode active. Actions are persisted in local browser storage.',
       actions: [],
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   }
 
   const userActions = guestActionsMemoryStore.get(uid) || [];
-  return jsonOk({ mode: 'FIREBASE_AUTH', uid, actions: userActions });
+  return NextResponse.json({ mode: 'FIREBASE_AUTH', uid, actions: userActions });
 }
 
 /**
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
   const token = extractBearerToken(request);
   if (!token || !isFirebaseConfigured()) {
-    return jsonOk({
+    return NextResponse.json({
       mode: 'GUEST',
       saved: true,
       action: newAction,
@@ -115,5 +115,5 @@ export async function POST(request: NextRequest) {
   existing.push(newAction);
   guestActionsMemoryStore.set(uid, existing);
 
-  return jsonOk({ mode: 'FIREBASE_AUTH', saved: true, action: newAction });
+  return NextResponse.json({ mode: 'FIREBASE_AUTH', saved: true, action: newAction });
 }

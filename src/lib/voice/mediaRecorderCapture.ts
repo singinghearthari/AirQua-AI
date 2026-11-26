@@ -51,6 +51,7 @@ export async function startMediaRecorderCapture(options: {
       try {
         const formData = new FormData();
         formData.append('file', recordedBlob, 'speech.webm');
+        formData.append('language', options.activeLanguage);
 
         const response = await fetch('/api/voice/transcribe', {
           method: 'POST',

@@ -1,13 +1,13 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getGroqClient } from '@/lib/ai/groqClient';
-import { enforceRateLimit, getErrorMessage, jsonError, jsonOk } from '@/lib/api/http';
+import { enforceRateLimit, getErrorMessage, jsonError } from '@/lib/api/http';
 
 export const runtime = 'nodejs';
 
 const MAX_AUDIO_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
- * Transcribes multipart audio recordings in English or Tamil using Groq Whisper auto-detection.
+ * Transcribes multipart audio recordings in English (`en`) or Tamil (`ta`) using Groq Whisper.
  */
 export async function POST(request: NextRequest) {
   const rateLimitResponse = enforceRateLimit(
@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
     return jsonError('Audio file exceeds 10 MB limit', 413);
   }
 
+  const languageRaw = formData.get('language');
+  const language = languageRaw === 'ta' ? 'ta' : 'en';
+
   const groq = getGroqClient();
   if (!groq) {
     return jsonError('Groq API key not configured on server.', 503, {
@@ -48,14 +51,14 @@ export async function POST(request: NextRequest) {
         ? file
         : new File([audioBlob], 'audio.webm', { type: audioBlob.type || 'audio/webm' });
 
-    // Omit explicit language so Whisper auto-detects spoken English or Tamil seamlessly
     const transcription = await groq.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-large-v3-turbo',
+      language,
       response_format: 'json',
     });
 
-    return jsonOk({
+    return NextResponse.json({
       text: transcription.text || '',
       provider: 'groq-whisper',
     });

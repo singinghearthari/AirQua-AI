@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError, jsonOk } from '@/lib/api/http';
+import { fetchWithTimeout, jsonError } from '@/lib/api/http';
 
 export const runtime = 'nodejs';
 
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
   const cached = geocodeCache.get(cacheKey);
   if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-    return jsonOk(cached.data, {
+    return NextResponse.json(cached.data, {
       headers: {
         'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
       },
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       console.warn(`Reverse geocoding failed: HTTP ${res.status}`);
-      return jsonOk(getFallbackLocation(lat, lon));
+      return NextResponse.json(getFallbackLocation(lat, lon));
     }
 
     const json = (await res.json()) as NominatimResponse;
@@ -142,13 +142,13 @@ export async function GET(request: NextRequest) {
 
     geocodeCache.set(cacheKey, { data: locationData, timestamp: now });
 
-    return jsonOk(locationData, {
+    return NextResponse.json(locationData, {
       headers: {
         'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
       },
     });
   } catch (err) {
     console.warn(`Reverse geocode network error for (${lat}, ${lon}):`, err);
-    return jsonOk(getFallbackLocation(lat, lon));
+    return NextResponse.json(getFallbackLocation(lat, lon));
   }
 }
