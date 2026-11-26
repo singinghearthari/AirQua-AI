@@ -12,6 +12,7 @@ import {
   buildQuickPrompts,
   buildWelcomeMessage,
   formatBestWindowLabel,
+  formatIsoClockTime,
   getNextMessageId,
   loadAutoReadPreference,
   loadCrossScreenContext,
@@ -192,5 +193,9 @@ describe('Core AQI, Auth, Prompts & Storage Modules', () => {
     expect(buildWelcomeMessage('Delhi', 'ta', 'SENIOR').text).toContain('Delhi');
     expect(buildQuickPrompts(undefined, 'en')).toContain('தமிழில் விளக்குங்கள்');
     expect(formatBestWindowLabel(null)).toBe('12:00–15:00');
+    expect(formatIsoClockTime('2026-11-26T14:00', false)).toBe('14:00');
+    expect(formatIsoClockTime('2026-11-26T14:00', true)).toBe('02:00 PM');
+    expect(formatIsoClockTime('2026-11-26T00:00', true)).toBe('12:00 AM');
+    expect(formatIsoClockTime('2026-11-26T07:30:00.000Z', false)).toBe('13:00');
   });
 });

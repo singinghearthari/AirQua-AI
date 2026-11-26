@@ -52,13 +52,40 @@ export function useChatSession(params: UseChatSessionParams) {
     onAfterSend,
   } = params;
 
-  const [crossScreen] = useState(loadCrossScreenContext);
-  const [messages, setMessages] = useState<MessageItem[]>(() => {
-    return loadStoredChatMessages() ?? [buildWelcomeMessage(cityName || 'your area', language, persona)];
-  });
+  const [crossScreen, setCrossScreen] = useState<{
+    roomScan: { sceneType: string; findingsCount: number; summary: string } | null;
+    simulatorSwaps: string[] | null;
+  }>({ roomScan: null, simulatorSwaps: null });
+  const [messages, setMessages] = useState<MessageItem[]>(() => [
+    buildWelcomeMessage(cityName || 'your area', language, persona),
+  ]);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFailedPrompt, setLastFailedPrompt] = useState<string | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      const ctx = loadCrossScreenContext();
+      if (ctx.roomScan || ctx.simulatorSwaps) {
+        setCrossScreen(ctx);
+      }
+      const stored = loadStoredChatMessages();
+      if (stored && stored.length > 0) {
+        setMessages(stored);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setMessages((prev) => {
+        if (prev.length === 1 && prev[0].id === 'initial-welcome') {
+          return [buildWelcomeMessage(cityName || 'your area', language, persona)];
+        }
+        return prev;
+      });
+    });
+  }, [cityName, language, persona]);
 
   useEffect(() => {
     if (!uid) return;

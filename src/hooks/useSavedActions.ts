@@ -12,7 +12,7 @@ import {
  * and Cloud Firestore (`users/{uid}/actions`).
  */
 export function useSavedActions(uid: string | undefined, showToast: (msg: string) => void) {
-  const [savedActions, setSavedActions] = useState<SavedActionItem[]>(loadStoredActions);
+  const [savedActions, setSavedActions] = useState<SavedActionItem[]>([]);
   const savedActionsRef = useRef<SavedActionItem[]>(savedActions);
 
   useEffect(() => {
@@ -20,10 +20,22 @@ export function useSavedActions(uid: string | undefined, showToast: (msg: string
   }, [savedActions]);
 
   useEffect(() => {
+    queueMicrotask(() => {
+      const local = loadStoredActions();
+      if (local.length > 0) {
+        setSavedActions(local);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (!uid) return;
     let active = true;
 
-    syncSavedActions(uid, savedActionsRef.current)
+    const localBaseline =
+      savedActionsRef.current.length > 0 ? savedActionsRef.current : loadStoredActions();
+
+    syncSavedActions(uid, localBaseline)
       .then((merged) => {
         if (!active) return;
         setSavedActions(merged);

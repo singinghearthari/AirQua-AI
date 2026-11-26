@@ -98,6 +98,31 @@ export function loadCrossScreenContext(): {
 }
 
 /**
+ * Formats an ISO timestamp clock label (`HH:MM` or `hh:mm AM/PM`) identically across server UTC
+ * and client timezones (`Asia/Kolkata` fallback for zoned timestamps, direct wall-clock for naive ISOs).
+ */
+export function formatIsoClockTime(isoString: string, hour12: boolean): string {
+  const localMatch = isoString.match(/T(\d{2}):(\d{2})(?!.*(?:Z|[+-]\d{2}:\d{2}))/);
+  if (localMatch) {
+    const hours = Number(localMatch[1]);
+    const minutes = localMatch[2];
+    if (!hour12) {
+      return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+    const h12 = hours % 12 || 12;
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+    return `${String(h12).padStart(2, '0')}:${minutes} ${suffix}`;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12,
+    timeZone: 'Asia/Kolkata',
+  }).format(new Date(isoString));
+}
+
+/**
  * Formats the primary outdoor Safe Window start–end range in 24-hour HH:MM form.
  */
 export function formatBestWindowLabel(
@@ -105,9 +130,7 @@ export function formatBestWindowLabel(
 ): string {
   const best = safeWindows?.bestOutdoorWindow;
   if (!best) return '12:00–15:00';
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${fmt(best.startISO)}–${fmt(best.endISO)}`;
+  return `${formatIsoClockTime(best.startISO, false)}–${formatIsoClockTime(best.endISO, false)}`;
 }
 
 /**

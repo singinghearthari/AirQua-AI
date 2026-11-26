@@ -18,7 +18,7 @@ import {
   SafeWindowSummary,
   SupportedLanguage,
 } from '@/types/airqua';
-import { EVALUATOR_PRESETS } from '@/lib/constants';
+import { EVALUATOR_PRESETS, FEATURED_CITIES } from '@/lib/constants';
 import { DICTIONARY, getDictionary } from '@/lib/i18n';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/shared/AuthModal';
@@ -79,12 +79,12 @@ const AirquaContext = createContext<AirquaContextType | null>(null);
 
 export function AirquaProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const initialPrefs = useMemo(() => loadStoredPreferences(), []);
 
-  const [city, setCity] = useState<CityPreset>(initialPrefs.city);
-  const [persona, setPersona] = useState<HouseholdPersona>(initialPrefs.persona);
-  const [scale, setScale] = useState<AqiScale>(initialPrefs.scale);
-  const [language, setLanguage] = useState<SupportedLanguage>(initialPrefs.language);
+  const [city, setCity] = useState<CityPreset>(FEATURED_CITIES[0]);
+  const [persona, setPersona] = useState<HouseholdPersona>('FAMILY_KIDS');
+  const [scale, setScale] = useState<AqiScale>('IN_CPCB');
+  const [language, setLanguage] = useState<SupportedLanguage>('en');
+  const [prefsHydrated, setPrefsHydrated] = useState(false);
   const [simulateStale, setSimulateStale] = useState<boolean>(false);
   const [isRoutineDrawerOpen, setIsRoutineDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -105,10 +105,19 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
-      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      const stored = loadStoredPreferences();
+      setCity(stored.city);
+      setPersona(stored.persona);
+      setScale(stored.scale);
+      setLanguage(stored.language);
+      setPrefsHydrated(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -135,13 +144,14 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
   }, [language]);
 
   useEffect(() => {
+    if (!prefsHydrated) return;
     persistPreferences({ city, persona, scale, language });
     if (user?.uid) {
       saveUserPreferences(user.uid, { city, persona, scale, language }).catch((err) =>
         console.warn('Failed to sync preferences to Firestore:', err)
       );
     }
-  }, [city, persona, scale, language, user?.uid]);
+  }, [city, persona, scale, language, user?.uid, prefsHydrated]);
 
   const { snapshot, safeWindows, isLoadingAir, airError, refreshAirData } =
     useAirQualityTelemetry({ city, scale, persona, simulateStale });

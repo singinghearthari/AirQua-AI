@@ -38,9 +38,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(() => {
-    return typeof window !== 'undefined' && Boolean(auth && isFirebaseConfigured());
-  });
+  const [loading, setLoading] = useState<boolean>(() => Boolean(auth && isFirebaseConfigured()));
 
   // Listen to auth state changes when Firebase Auth is configured
   useEffect(() => {

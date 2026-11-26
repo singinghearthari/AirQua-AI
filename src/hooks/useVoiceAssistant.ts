@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { SupportedLanguage } from '@/types/airqua';
 import {
   getBrowserSpeechRecognition,
@@ -30,6 +30,20 @@ function stopMediaStreamRef(ref: { current: MediaStream | null }): void {
   ref.current?.getTracks().forEach((track) => track.stop());
 }
 
+const emptySubscribe = () => () => {};
+
+function getClientSttSupport(): boolean {
+  const hasMediaRecorder =
+    typeof navigator !== 'undefined' &&
+    Boolean(navigator.mediaDevices?.getUserMedia) &&
+    typeof MediaRecorder !== 'undefined';
+  return hasMediaRecorder || Boolean(getBrowserSpeechRecognition());
+}
+
+function getClientTtsSupport(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
 /**
  * React hook providing bilingual (`en-IN` / `ta-IN`) Voice Input (Groq Whisper with browser
  * SpeechRecognition fallback) and unified bilingual Web Speech Voice Readout so both English
@@ -42,20 +56,10 @@ export function useVoiceAssistant(
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
 
-  const [sttSupported] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const hasMediaRecorder =
-      typeof navigator !== 'undefined' &&
-      Boolean(navigator.mediaDevices?.getUserMedia) &&
-      typeof MediaRecorder !== 'undefined';
-    return hasMediaRecorder || Boolean(getBrowserSpeechRecognition());
-  });
+  const sttSupported = useSyncExternalStore(emptySubscribe, getClientSttSupport, () => false);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [ttsSupported] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return 'speechSynthesis' in window;
-  });
+  const ttsSupported = useSyncExternalStore(emptySubscribe, getClientTtsSupport, () => false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);

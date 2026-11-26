@@ -187,9 +187,10 @@ export default function RoutineDrawer({ isOpen, onClose }: RoutineDrawerProps) {
                     <div className="flex items-center justify-between text-[11px] text-on-surface-variant/80">
                       <span className="inline-flex items-center gap-1 font-mono">
                         <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(item.savedAt).toLocaleDateString([], {
+                        {new Date(item.savedAt).toLocaleDateString('en-IN', {
                           month: 'short',
                           day: 'numeric',
+                          timeZone: 'Asia/Kolkata',
                         })}
                       </span>
                       <button

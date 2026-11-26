@@ -56,6 +56,7 @@ describe('Security Headers, Model Versioning & Runtime Isolation', () => {
     expect(csp).toContain('https://*.googleapis.com');
     expect(csp).toContain('https://fonts.gstatic.com');
     expect(csp).toContain('blob:');
+    expect(csp).not.toContain('googletagmanager.com');
   });
 
   it('pins the primary Gemini model to gemini-3.5-flash-lite by default', () => {

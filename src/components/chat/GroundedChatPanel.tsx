@@ -43,13 +43,19 @@ export default function GroundedChatPanel() {
   }, []);
 
   const voice = useVoiceAssistant(language, handleSpeechResult);
-  const [autoReadReplies, setAutoReadReplies] = useState<boolean>(loadAutoReadPreference);
+  const [autoReadReplies, setAutoReadReplies] = useState<boolean>(false);
   const [activeSpeakingMsgId, setActiveSpeakingMsgId] = useState<string | null>(null);
   const [savedActionTitles, setSavedActionTitles] = useState<Record<string, boolean>>({});
   const [showSavedPanel, setShowSavedPanel] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (loadAutoReadPreference()) setAutoReadReplies(true);
+    });
+  }, []);
 
   const chat = useChatSession({
     uid: user?.uid,
@@ -83,7 +89,6 @@ export default function GroundedChatPanel() {
   };
 
   const bestWindowLabel = formatBestWindowLabel(safeWindows);
-
   const handleToggleSpeak = (msg: MessageItem) => {
     if (voice.isSpeaking && activeSpeakingMsgId === msg.id) {
       voice.stopSpeaking();
@@ -142,7 +147,6 @@ export default function GroundedChatPanel() {
         savedCount={savedActions.length}
         onClearChat={chat.clearChat}
       />
-
       {showSavedPanel && (
         <ChatSavedPanel
           title={t.consultant.savedPanelTitle}
@@ -151,7 +155,6 @@ export default function GroundedChatPanel() {
           onRemoveAction={removeAction}
         />
       )}
-
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
           <HelpCircle className="h-3.5 w-3.5 text-outline" aria-hidden="true" />
@@ -171,7 +174,6 @@ export default function GroundedChatPanel() {
           </button>
         ))}
       </div>
-
       <div
         role="log"
         aria-live="polite"
@@ -200,7 +202,6 @@ export default function GroundedChatPanel() {
         {chat.isSending && <ChatTypingIndicator persona={persona} />}
         <div ref={messagesEndRef} />
       </div>
-
       <ChatStatusBanners
         error={chat.error}
         lastFailedPrompt={chat.lastFailedPrompt}
@@ -215,7 +216,6 @@ export default function GroundedChatPanel() {
         transcript={voice.transcript}
         onStopListening={voice.stopListening}
       />
-
       <ChatInputForm
         input={input}
         onChangeInput={setInput}

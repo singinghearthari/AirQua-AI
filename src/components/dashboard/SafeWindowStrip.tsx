@@ -3,6 +3,7 @@
 import React, { useSyncExternalStore } from 'react';
 import { AlertTriangle, DoorOpen, Footprints } from 'lucide-react';
 import { useAirqua } from '@/context/AirquaContext';
+import { formatIsoClockTime } from '@/lib/storage/chatStorage';
 import SafeWindowChart, { SafeWindowChartDatum } from './SafeWindowChart';
 
 const emptySubscribe = () => () => {};
@@ -12,11 +13,7 @@ function useIsMounted() {
 
 function formatHourLabel(isoString: string): string {
   try {
-    return new Date(isoString).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return formatIsoClockTime(isoString, true);
   } catch (err) {
     console.warn('[SafeWindowStrip] Failed to format hour label:', isoString, err);
     return isoString;
@@ -26,11 +23,7 @@ function formatHourLabel(isoString: string): string {
 function format24h(isoString: string | undefined): string | null {
   if (!isoString) return null;
   try {
-    return new Date(isoString).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    return formatIsoClockTime(isoString, false);
   } catch (err) {
     console.warn('[SafeWindowStrip] Failed to format 24h time:', isoString, err);
     return null;
