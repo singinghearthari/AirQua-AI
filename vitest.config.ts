@@ -9,6 +9,12 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'node',
       env: env,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json-summary'],
+        reportsDirectory: './coverage',
+        include: ['src/lib/**/*.ts', 'src/app/api/**/*.ts'],
+      },
     },
     resolve: {
       alias: {

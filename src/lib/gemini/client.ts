@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 
 let cachedClient: GoogleGenAI | null = null;
 
@@ -25,7 +26,7 @@ export function getGeminiClient(): GoogleGenAI {
       apiKey,
       apiVersion: 'v1beta',
       httpOptions: {
-        timeout: 15000,
+        timeout: TIMEOUTS_MS.AI_UPSTREAM,
       },
     });
   }

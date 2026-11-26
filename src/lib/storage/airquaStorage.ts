@@ -7,10 +7,10 @@ import {
 import { FEATURED_CITIES } from '@/lib/constants';
 import type { SavedActionItem } from '@/context/AirquaContext';
 
-export const STORAGE_SAVED_ACTIONS = 'airqua_saved_actions_v2';
-export const STORAGE_PREFS = 'airqua_user_prefs_v2';
+const STORAGE_SAVED_ACTIONS = 'airqua_saved_actions_v2';
+const STORAGE_PREFS = 'airqua_user_prefs_v2';
 
-export interface StoredPreferences {
+interface StoredPreferences {
   city: CityPreset;
   persona: HouseholdPersona;
   scale: AqiScale;
@@ -40,7 +40,8 @@ export function loadStoredPreferences(): StoredPreferences {
       scale: parsed.scale ?? defaults.scale,
       language: parsed.language ?? defaults.language,
     };
-  } catch {
+  } catch (err) {
+    console.warn('[airquaStorage] Failed to parse stored preferences, using defaults:', err);
     return defaults;
   }
 }
@@ -52,8 +53,8 @@ export function persistPreferences(prefs: StoredPreferences): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_PREFS, JSON.stringify(prefs));
-  } catch {
-    // Ignore storage quota / private-browsing write errors
+  } catch (err) {
+    console.warn('[airquaStorage] Failed to write preferences to localStorage:', err);
   }
 }
 
@@ -65,7 +66,8 @@ export function loadStoredActions(): SavedActionItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_SAVED_ACTIONS);
     return raw ? (JSON.parse(raw) as SavedActionItem[]) : [];
-  } catch {
+  } catch (err) {
+    console.warn('[airquaStorage] Failed to read saved actions from localStorage:', err);
     return [];
   }
 }
@@ -77,7 +79,7 @@ export function persistActions(actions: SavedActionItem[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_SAVED_ACTIONS, JSON.stringify(actions));
-  } catch {
-    // Ignore storage quota / private-browsing write errors
+  } catch (err) {
+    console.warn('[airquaStorage] Failed to write saved actions to localStorage:', err);
   }
 }

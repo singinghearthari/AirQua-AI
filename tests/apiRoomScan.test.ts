@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST as roomScanHandler } from '@/app/api/room-scan/route';
 import * as geminiClientModule from '@/lib/gemini/client';
 import * as groqClientModule from '@/lib/ai/groqClient';
@@ -35,6 +35,11 @@ const VALID_SAMPLE_RESULT = {
 
 describe('/api/room-scan', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 
@@ -217,7 +222,9 @@ describe('/api/room-scan', () => {
 
     const res = await roomScanHandler(req);
     expect(res.status).toBe(200);
+    expect(res.headers.get('X-Airqua-Fallback')).toBe('true');
     const json = await res.json();
+    expect(json.isFallback).toBe(true);
     expect(mockGeminiTimeout).toHaveBeenCalledTimes(1);
     expect(mockGroqFail).toHaveBeenCalledTimes(2);
     expect(json.result.sceneType).toBe('OTHER');

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError, parseJsonBody } from '@/lib/api/http';
+import { enforceRateLimit, fetchWithTimeout, jsonError, parseJsonBody } from '@/lib/api/http';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 import { isFirebaseConfigured } from '@/lib/firebase/client';
+import { setBoundedMapEntry } from '@/lib/security/boundedMap';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +16,7 @@ interface StoredUserAction {
 }
 
 const guestActionsMemoryStore = new Map<string, StoredUserAction[]>();
+const MAX_ACTION_USERS = 500;
 
 const ActionPayloadSchema = z.object({
   id: z.string().optional(),
@@ -37,7 +40,7 @@ async function verifyFirebaseIdToken(token: string): Promise<string | null> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token }),
-        timeoutMs: 6000,
+        timeoutMs: TIMEOUTS_MS.FIREBASE_TOKEN_VERIFY,
       }
     );
 
@@ -59,6 +62,9 @@ function extractBearerToken(request: NextRequest): string | null {
  * Lists saved routine actions for authenticated Firebase users or explains Guest Mode persistence.
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 90, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const token = extractBearerToken(request);
 
   if (!token || !isFirebaseConfigured()) {
@@ -82,6 +88,9 @@ export async function GET(request: NextRequest) {
  * Saves a routine action item for an authenticated user or returns a Guest Mode payload.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 90, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const parsed = await parseJsonBody(
     request,
     ActionPayloadSchema,
@@ -112,8 +121,8 @@ export async function POST(request: NextRequest) {
   }
 
   const existing = guestActionsMemoryStore.get(uid) || [];
-  existing.push(newAction);
-  guestActionsMemoryStore.set(uid, existing);
+  const nextActions = [...existing, newAction].slice(-100);
+  setBoundedMapEntry(guestActionsMemoryStore, uid, nextActions, MAX_ACTION_USERS);
 
   return NextResponse.json({ mode: 'FIREBASE_AUTH', saved: true, action: newAction });
 }

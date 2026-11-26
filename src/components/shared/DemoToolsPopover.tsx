@@ -9,6 +9,7 @@ export default function DemoToolsPopover() {
   const { applyEvaluatorPreset, simulateStale, setSimulateStale, city, t } = useAirqua();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Close when clicking outside
   useEffect(() => {
@@ -21,11 +22,13 @@ export default function DemoToolsPopover() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close on Escape
+  // Close on Escape and return focus to trigger button
   useEffect(() => {
+    if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         setIsOpen(false);
+        triggerRef.current?.focus();
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -35,9 +38,11 @@ export default function DemoToolsPopover() {
   return (
     <div className="relative" ref={containerRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
+        aria-controls="demo-tools-dialog"
         aria-haspopup="dialog"
         aria-label="Open Evaluator Demo Tools"
         className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none cursor-pointer ${
@@ -58,6 +63,7 @@ export default function DemoToolsPopover() {
 
       {isOpen && (
         <div
+          id="demo-tools-dialog"
           role="dialog"
           aria-label="Evaluator Demo Controls"
           className="absolute right-0 mt-2 w-80 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 shadow-xl z-50 flex flex-col gap-3 animate-in fade-in-50 zoom-in-95 duration-150"

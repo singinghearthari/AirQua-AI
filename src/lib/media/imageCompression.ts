@@ -9,7 +9,7 @@ const VALID_IMAGE_TYPES: readonly SupportedImageMime[] = [
 const MAX_RAW_BYTES = 10 * 1024 * 1024;
 const MAX_DIMENSION = 1600;
 
-export function isSupportedImageMime(mime: string): mime is SupportedImageMime {
+function isSupportedImageMime(mime: string): mime is SupportedImageMime {
   return (VALID_IMAGE_TYPES as readonly string[]).includes(mime);
 }
 

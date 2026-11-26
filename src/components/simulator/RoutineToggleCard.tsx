@@ -6,7 +6,6 @@ import {
   Clock,
   Compass,
   Home,
-  Sliders,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -15,6 +14,7 @@ import {
   SimulatorToggleConfig,
   SimulatorToggleId,
 } from '@/types/airqua';
+import RangeSliderControl from './RangeSliderControl';
 
 interface RoutineToggleCardProps {
   toggle: SimulatorToggleConfig;
@@ -122,32 +122,18 @@ export default function RoutineToggleCard({
       </div>
 
       {isActive && toggle.id === 'CAR_TO_TRANSIT' && (
-        <div className="pt-3 border-t border-outline-variant/60 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between text-[12px]">
-            <span className="font-medium text-on-surface flex items-center gap-1.5">
-              <Sliders className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              Daily Commute Distance:
-            </span>
-            <span className="font-mono font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
-              {commuteDistanceKm} km roundtrip
-            </span>
-          </div>
-          <input
-            type="range"
-            min={2}
-            max={40}
-            step={1}
-            value={commuteDistanceKm}
-            onChange={(e) => onChangeDistance(Number(e.target.value))}
-            aria-label="Daily commute distance in kilometers"
-            className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          />
-          <div className="flex justify-between text-[10px] font-mono text-on-surface-variant">
-            <span>2 km</span>
-            <span>15 km (typical Indian urban commute)</span>
-            <span>40 km</span>
-          </div>
-        </div>
+        <RangeSliderControl
+          label="Daily Commute Distance:"
+          valueLabel={`${commuteDistanceKm} km roundtrip`}
+          min={2}
+          max={40}
+          value={commuteDistanceKm}
+          ariaLabel="Daily commute distance in kilometers"
+          onChange={onChangeDistance}
+          minLabel="2 km"
+          midLabel="15 km (typical Indian urban commute)"
+          maxLabel="40 km"
+        />
       )}
 
       {isActive && toggle.id === 'CARPOOL' && (
@@ -177,56 +163,33 @@ export default function RoutineToggleCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[12px]">
-            <span className="font-medium text-on-surface">Shared Route Distance:</span>
-            <span className="font-mono font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
-              {commuteDistanceKm} km
-            </span>
-          </div>
-          <input
-            type="range"
+          <RangeSliderControl
+            label="Shared Route Distance:"
+            valueLabel={`${commuteDistanceKm} km`}
             min={2}
             max={40}
-            step={1}
             value={commuteDistanceKm}
-            onChange={(e) => onChangeDistance(Number(e.target.value))}
-            aria-label="Shared carpool route distance in kilometers"
-            className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            ariaLabel="Shared carpool route distance in kilometers"
+            onChange={onChangeDistance}
+            minLabel="2 km"
+            maxLabel="40 km"
           />
-          <div className="flex justify-between text-[10px] font-mono text-on-surface-variant">
-            <span>2 km</span>
-            <span>40 km</span>
-          </div>
         </div>
       )}
 
       {isActive && toggle.id === 'CONSOLIDATE_TRIPS' && (
-        <div className="pt-3 border-t border-outline-variant/60 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between text-[12px]">
-            <span className="font-medium text-on-surface flex items-center gap-1.5">
-              <Sliders className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              Avoided Cold-Start Driving:
-            </span>
-            <span className="font-mono font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
-              {savedErrandKm} km eliminated
-            </span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={15}
-            step={1}
-            value={savedErrandKm}
-            onChange={(e) => onChangeSavedKm(Number(e.target.value))}
-            aria-label="Avoided errand driving distance in kilometers"
-            className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          />
-          <div className="flex justify-between text-[10px] font-mono text-on-surface-variant">
-            <span>1 km</span>
-            <span>5 km (2 short trips combined)</span>
-            <span>15 km</span>
-          </div>
-        </div>
+        <RangeSliderControl
+          label="Avoided Cold-Start Driving:"
+          valueLabel={`${savedErrandKm} km eliminated`}
+          min={1}
+          max={15}
+          value={savedErrandKm}
+          ariaLabel="Avoided errand driving distance in kilometers"
+          onChange={onChangeSavedKm}
+          minLabel="1 km"
+          midLabel="5 km (2 short trips combined)"
+          maxLabel="15 km"
+        />
       )}
     </div>
   );

@@ -71,7 +71,11 @@ function parseConsultantPayload(
 
   try {
     parsed = JSON.parse(cleaned);
-  } catch {
+  } catch (parseErr) {
+    console.warn(
+      '[chatRouter] Model response was not valid JSON, normalizing as plain-text response:',
+      getErrorMessage(parseErr)
+    );
     parsed = buildPlainTextFallbackPayload(cleaned || rawText, language, sourceNote);
   }
 

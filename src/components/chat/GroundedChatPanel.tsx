@@ -75,8 +75,8 @@ export default function GroundedChatPanel() {
       const next = !prev;
       try {
         localStorage.setItem(STORAGE_AUTO_READ_KEY, String(next));
-      } catch {
-        // Ignore storage errors
+      } catch (err) {
+        console.warn('[GroundedChatPanel] Failed to persist auto-read preference:', err);
       }
       return next;
     });

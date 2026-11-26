@@ -2,6 +2,8 @@ import {
   AqiScale,
   AirQualitySnapshot,
   HouseholdPersona,
+  OpenMeteoAirQualityResponse,
+  OpenMeteoCurrentResponse,
   PollutantReading,
   SafeWindowSummary,
   WeatherTelemetry,
@@ -18,7 +20,7 @@ import {
   HourlySlotInput,
 } from './safeWindowEngine';
 
-export interface AirQualityAdapterOptions {
+interface AirQualityAdapterOptions {
   latitude: number;
   longitude: number;
   locationName: string;
@@ -29,55 +31,20 @@ export interface AirQualityAdapterOptions {
   simulateStale?: boolean;
 }
 
-export interface AirQualityResult {
+interface AirQualityResult {
   snapshot: AirQualitySnapshot;
   safeWindows: SafeWindowSummary;
 }
 
-/**
- * Adapts raw Open-Meteo Air Quality API output into strictly typed,
- * scale-isolated AIRQUA data structures.
- */
-export async function getAirQualityData(
-  options: AirQualityAdapterOptions
-): Promise<AirQualityResult> {
-  const {
-    latitude,
-    longitude,
-    locationName,
-    region,
-    countryCode = 'IN',
-    scale = 'IN_CPCB',
-    persona = 'COMMUTER',
-    simulateStale = false,
-  } = options;
-
-  const [airSettled, weatherSettled] = await Promise.allSettled([
-    fetchOpenMeteoAirQuality(latitude, longitude),
-    fetchLiveWeather(latitude, longitude),
-  ]);
-
-  if (airSettled.status === 'rejected') {
-    throw airSettled.reason;
-  }
-
-  const rawData = airSettled.value;
-  const weather: WeatherTelemetry | null =
-    weatherSettled.status === 'fulfilled' ? weatherSettled.value : null;
-
-  const current = rawData.current;
-  const rawObservedAt = current?.time ?? null;
-  const { freshness, effectiveObservedAt } = evaluateFreshness(rawObservedAt, simulateStale);
-  const fetchedAt = new Date().toISOString();
-
-  // Convert Open-Meteo raw CO (ug/m3) to mg/m3 for standard CPCB indexing
+function buildPollutantReadings(
+  current: OpenMeteoCurrentResponse | undefined
+): PollutantReading[] {
   const coMgM3 =
     current?.carbon_monoxide !== undefined && current?.carbon_monoxide !== null
       ? Math.round((current.carbon_monoxide / 1000) * 100) / 100
       : null;
 
-  // Pollutant readings array
-  const pollutants: PollutantReading[] = [
+  return [
     {
       code: 'PM2_5',
       label: 'PM2.5 (Fine Particles)',
@@ -115,76 +82,108 @@ export async function getAirQualityData(
       unit: 'mg/m³',
     },
   ];
+}
 
-  let aqiValue: number | null = null;
-  let aqiCategory = 'Unknown';
-  let dominantPollutant: PollutantReading['code'] | null = null;
-  let disclaimer = '';
-
+function assessAqiByScale(
+  scale: AqiScale,
+  pollutants: PollutantReading[],
+  current: OpenMeteoCurrentResponse | undefined
+): {
+  aqiValue: number | null;
+  aqiCategory: string;
+  dominantPollutant: PollutantReading['code'] | null;
+  disclaimer: string;
+} {
   if (scale === 'IN_CPCB') {
     const cpcbResult = calculateOverallCpcbAqi(pollutants);
-    aqiValue = cpcbResult.overallAqi;
-    aqiCategory = cpcbResult.category;
-    dominantPollutant = cpcbResult.dominantPollutant;
-    disclaimer = cpcbResult.disclaimer;
-
-    // Attach sub-indices to pollutants
     for (const p of pollutants) {
       p.subIndex = cpcbResult.subIndices[p.code];
     }
-  } else {
-    // US_EPA Scale
-    aqiValue = current?.us_aqi ?? null;
-    aqiCategory = getUsAqiCategory(aqiValue);
-    dominantPollutant = 'PM2_5'; // Typically dominant in urban winter settings
-    disclaimer =
-      'Mapped directly from Open-Meteo US AQI output using official US EPA standards. Never mixed with CPCB thresholds.';
+    return {
+      aqiValue: cpcbResult.overallAqi,
+      aqiCategory: cpcbResult.category,
+      dominantPollutant: cpcbResult.dominantPollutant,
+      disclaimer: cpcbResult.disclaimer,
+    };
   }
 
+  const aqiValue = current?.us_aqi ?? null;
+  return {
+    aqiValue,
+    aqiCategory: getUsAqiCategory(aqiValue),
+    dominantPollutant: 'PM2_5',
+    disclaimer:
+      'Mapped directly from Open-Meteo US AQI output using official US EPA standards. Never mixed with CPCB thresholds.',
+  };
+}
+
+function extractHourlySlotInputs(
+  hourly: OpenMeteoAirQualityResponse['hourly']
+): HourlySlotInput[] {
+  if (!hourly?.time) return [];
+  const pm25s = hourly.pm2_5 ?? [];
+  const pm10s = hourly.pm10 ?? [];
+  const usAqis = hourly.us_aqi ?? [];
+
+  return hourly.time.map((timeISO, i) => ({
+    timeISO,
+    pm25: pm25s[i] ?? null,
+    pm10: pm10s[i] ?? null,
+    usAqi: usAqis[i] ?? null,
+  }));
+}
+
+/**
+ * Adapts raw Open-Meteo Air Quality API output into strictly typed,
+ * scale-isolated AIRQUA data structures.
+ */
+export async function getAirQualityData(
+  options: AirQualityAdapterOptions
+): Promise<AirQualityResult> {
+  const {
+    latitude,
+    longitude,
+    locationName,
+    region,
+    countryCode = 'IN',
+    scale = 'IN_CPCB',
+    persona = 'COMMUTER',
+    simulateStale = false,
+  } = options;
+
+  const [airSettled, weatherSettled] = await Promise.allSettled([
+    fetchOpenMeteoAirQuality(latitude, longitude),
+    fetchLiveWeather(latitude, longitude),
+  ]);
+
+  if (airSettled.status === 'rejected') {
+    throw airSettled.reason;
+  }
+
+  const rawData = airSettled.value;
+  const weather: WeatherTelemetry | null =
+    weatherSettled.status === 'fulfilled' ? weatherSettled.value : null;
+
+  const current = rawData.current;
+  const { freshness, effectiveObservedAt } = evaluateFreshness(current?.time ?? null, simulateStale);
+  const pollutants = buildPollutantReadings(current);
+  const scaleAssessment = assessAqiByScale(scale, pollutants, current);
+
   const snapshot: AirQualitySnapshot = {
-    location: {
-      name: locationName,
-      region,
-      countryCode,
-      latitude,
-      longitude,
-    },
+    location: { name: locationName, region, countryCode, latitude, longitude },
     provider: 'Open-Meteo Air Quality (Copernicus CAMS & GFS-based)',
     dataKind: 'OBSERVED',
     observedAt: effectiveObservedAt,
-    fetchedAt,
+    fetchedAt: new Date().toISOString(),
     freshness,
     scale,
-    aqiValue,
-    aqiCategory,
-    dominantPollutant,
+    ...scaleAssessment,
     pollutants,
-    disclaimer,
     weather,
   };
 
-  // Build hourly slot input for SafeWindowEngine
-  const hourlySlots: HourlySlotInput[] = [];
-  if (rawData.hourly && rawData.hourly.time) {
-    const times = rawData.hourly.time;
-    const pm25s = rawData.hourly.pm2_5 ?? [];
-    const pm10s = rawData.hourly.pm10 ?? [];
-    const usAqis = rawData.hourly.us_aqi ?? [];
-
-    for (let i = 0; i < times.length; i++) {
-      hourlySlots.push({
-        timeISO: times[i],
-        pm25: pm25s[i] ?? null,
-        pm10: pm10s[i] ?? null,
-        usAqi: usAqis[i] ?? null,
-      });
-    }
-  }
-
+  const hourlySlots = extractHourlySlotInputs(rawData.hourly);
   const safeWindows = computeSafeWindowSummary(hourlySlots, persona);
 
-  return {
-    snapshot,
-    safeWindows,
-  };
+  return { snapshot, safeWindows };
 }

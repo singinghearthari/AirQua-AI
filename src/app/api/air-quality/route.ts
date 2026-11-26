@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getErrorMessage, jsonError } from '@/lib/api/http';
+import { enforceRateLimit, getErrorMessage, jsonError } from '@/lib/api/http';
 import { getAirQualityData } from '@/lib/aqi/adapter';
 
 export const runtime = 'nodejs';
@@ -40,6 +40,9 @@ const QuerySchema = z.object({
  * deterministic CPCB/US AQI scores, 24h safe windows, and persona daily guidance.
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 120, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { searchParams } = new URL(request.url);
 
   const parseResult = QuerySchema.safeParse({

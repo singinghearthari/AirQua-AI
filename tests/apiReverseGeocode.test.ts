@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET as reverseGeocodeHandler } from '@/app/api/reverse-geocode/route';
 import { NextRequest } from 'next/server';
 
 describe('/api/reverse-geocode', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 

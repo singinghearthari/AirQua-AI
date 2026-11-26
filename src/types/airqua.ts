@@ -1,6 +1,5 @@
 export type AqiScale = 'IN_CPCB' | 'US_EPA';
 export type DataFreshness = 'FRESH' | 'STALE' | 'UNAVAILABLE';
-export type DataKind = 'OBSERVED' | 'FORECAST' | 'ESTIMATE' | 'AI_EXPLANATION';
 export type SupportedLanguage = 'en' | 'ta';
 export type HouseholdPersona = 'COMMUTER' | 'FAMILY_KIDS' | 'SENIOR' | 'STUDENT_ATHLETE';
 
@@ -183,7 +182,7 @@ export interface EvaluatorPreset {
   description: string;
 }
 
-export interface OpenMeteoHourlyResponse {
+interface OpenMeteoHourlyResponse {
   time: string[];
   pm2_5?: (number | null)[];
   pm10?: (number | null)[];

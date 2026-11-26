@@ -19,11 +19,18 @@ describe('Security Headers, Model Versioning & Runtime Isolation', () => {
     }
   });
 
-  it('configures strict baseline HTTP security headers in next.config.ts', async () => {
+  it('configures CSP, HSTS, and baseline security headers in next.config.ts for pages and /api/*', async () => {
     expect(typeof nextConfig.headers).toBe('function');
     const entries = nextConfig.headers ? await nextConfig.headers() : [];
     const globalRule = entries.find((entry) => entry.source === '/(.*)');
     expect(globalRule).toBeDefined();
+
+    // Verify wildcard source regex covers root page and API routes
+    const routePattern = new RegExp(`^${globalRule?.source}$`);
+    expect(routePattern.test('/')).toBe(true);
+    expect(routePattern.test('/room-scan')).toBe(true);
+    expect(routePattern.test('/api/chat')).toBe(true);
+    expect(routePattern.test('/api/air-quality')).toBe(true);
 
     const headerMap = new Map(
       (globalRule?.headers || []).map((h) => [h.key, h.value])
@@ -35,6 +42,20 @@ describe('Security Headers, Model Versioning & Runtime Isolation', () => {
     expect(headerMap.get('Permissions-Policy')).toContain('camera=()');
     expect(headerMap.get('Permissions-Policy')).toContain('microphone=(self)');
     expect(headerMap.get('Permissions-Policy')).toContain('geolocation=(self)');
+
+    expect(headerMap.get('Strict-Transport-Security')).toBe(
+      'max-age=63072000; includeSubDomains; preload'
+    );
+
+    const csp = headerMap.get('Content-Security-Policy') || '';
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("base-uri 'self'");
+    expect(csp).toContain("form-action 'self'");
+    expect(csp).toContain('https://*.googleapis.com');
+    expect(csp).toContain('https://fonts.gstatic.com');
+    expect(csp).toContain('blob:');
   });
 
   it('pins the primary Gemini model to gemini-3.5-flash-lite by default', () => {

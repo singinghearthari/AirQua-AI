@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 
 let cachedGroqClient: Groq | null = null;
 
@@ -32,7 +33,7 @@ export function getGroqClient(): Groq | null {
   if (!cachedGroqClient) {
     cachedGroqClient = new Groq({
       apiKey,
-      timeout: 15000,
+      timeout: TIMEOUTS_MS.AI_UPSTREAM,
     });
   }
 

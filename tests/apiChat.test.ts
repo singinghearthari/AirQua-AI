@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST as chatHandler } from '@/app/api/chat/route';
 import { GET as getActionsHandler, POST as postActionHandler } from '@/app/api/actions/route';
 import { ConsultantResponseSchema } from '@/lib/gemini/schemas';
@@ -25,6 +25,11 @@ function asMockGroqClient(create: ReturnType<typeof vi.fn>): GroqClient {
 
 describe('/api/chat', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 

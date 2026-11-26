@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError } from '@/lib/api/http';
+import { enforceRateLimit, fetchWithTimeout, jsonError } from '@/lib/api/http';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+import { setBoundedMapEntry } from '@/lib/security/boundedMap';
 
 export const runtime = 'nodejs';
 
@@ -33,6 +35,7 @@ interface OpenMeteoGeocodeResponse {
 
 const geocodeCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_GEOCODE_CACHE = 500;
 
 const INDIAN_FALLBACK_CITIES: CityResult[] = [
   { name: 'Delhi', region: 'National Capital Territory of Delhi', countryCode: 'IN', latitude: 28.6139, longitude: 77.209 },
@@ -66,6 +69,9 @@ const QuerySchema = z.object({
  * and offline Indian city catalog fallback.
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 120, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { searchParams } = new URL(request.url);
   const parseResult = QuerySchema.safeParse({ q: searchParams.get('q') });
 
@@ -92,7 +98,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('format', 'json');
 
     const res = await fetchWithTimeout(url.toString(), {
-      timeoutMs: 6000,
+      timeoutMs: TIMEOUTS_MS.GEOCODE_SEARCH,
       headers: { Accept: 'application/json' },
     });
 
@@ -114,7 +120,7 @@ export async function GET(request: NextRequest) {
         return 0;
       });
 
-      geocodeCache.set(cacheKey, { results, timestamp: now });
+      setBoundedMapEntry(geocodeCache, cacheKey, { results, timestamp: now }, MAX_GEOCODE_CACHE);
       return NextResponse.json({ results });
     }
   } catch (error) {
@@ -128,6 +134,11 @@ export async function GET(request: NextRequest) {
       (c.region && c.region.toLowerCase().includes(lowerQ))
   );
 
-  geocodeCache.set(cacheKey, { results: fallbackMatches, timestamp: now });
+  setBoundedMapEntry(
+    geocodeCache,
+    cacheKey,
+    { results: fallbackMatches, timestamp: now },
+    MAX_GEOCODE_CACHE
+  );
   return NextResponse.json({ results: fallbackMatches });
 }

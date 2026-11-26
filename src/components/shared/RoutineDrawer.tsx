@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
   X,
   CheckCircle2,
@@ -24,17 +25,14 @@ export default function RoutineDrawer({ isOpen, onClose }: RoutineDrawerProps) {
   const { savedActions, removeAction, toggleActionCompleted, clearCompletedActions } =
     useAirqua();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Close on Escape key
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  useFocusTrap({
+    isOpen,
+    containerRef: drawerRef,
+    initialFocusRef: closeButtonRef,
+    onClose,
+  });
 
   if (!isOpen) return null;
 
@@ -76,6 +74,7 @@ export default function RoutineDrawer({ isOpen, onClose }: RoutineDrawerProps) {
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Close routine drawer"
@@ -88,7 +87,14 @@ export default function RoutineDrawer({ isOpen, onClose }: RoutineDrawerProps) {
         {/* Progress Bar */}
         {totalCount > 0 && (
           <div className="px-5 pt-3 pb-1 bg-surface-container-lowest">
-            <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-label="Daily routine completion progress"
+              aria-valuenow={progressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="w-full bg-surface-container h-2 rounded-full overflow-hidden"
+            >
               <div
                 className="bg-primary h-full transition-all duration-300 rounded-full"
                 style={{ width: `${progressPct}%` }}

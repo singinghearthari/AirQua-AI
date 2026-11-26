@@ -46,7 +46,8 @@ export function useGpsCityResolver(
           } else {
             onResolved(fallbackCity);
           }
-        } catch {
+        } catch (err) {
+          console.warn('[useGpsCityResolver] Reverse geocode lookup failed, falling back to coordinates:', err);
           onResolved(fallbackCity);
         } finally {
           setIsGpsLoading(false);

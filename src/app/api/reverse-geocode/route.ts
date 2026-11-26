@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError } from '@/lib/api/http';
+import { enforceRateLimit, fetchWithTimeout, jsonError } from '@/lib/api/http';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+import { setBoundedMapEntry } from '@/lib/security/boundedMap';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +44,7 @@ interface NominatimResponse {
 
 const geocodeCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_REVERSE_CACHE = 500;
 
 function getFallbackLocation(lat: number, lon: number): LocationPayload {
   return {
@@ -57,6 +60,9 @@ function getFallbackLocation(lat: number, lon: number): LocationPayload {
  * Resolves GPS coordinates to an Indian urban neighborhood/city label via OpenStreetMap Nominatim.
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 60, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { searchParams } = new URL(request.url);
 
   const parseResult = QuerySchema.safeParse({
@@ -87,7 +93,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetchWithTimeout(url, {
-      timeoutMs: 8000,
+      timeoutMs: TIMEOUTS_MS.REVERSE_GEOCODE,
       headers: {
         'User-Agent': 'AIRQUA-AI/1.0 (PromptWars Challenge 6; https://aq-ai.vercel.app)',
         Accept: 'application/json',
@@ -140,7 +146,12 @@ export async function GET(request: NextRequest) {
       longitude: lon,
     };
 
-    geocodeCache.set(cacheKey, { data: locationData, timestamp: now });
+    setBoundedMapEntry(
+      geocodeCache,
+      cacheKey,
+      { data: locationData, timestamp: now },
+      MAX_REVERSE_CACHE
+    );
 
     return NextResponse.json(locationData, {
       headers: {

@@ -6,8 +6,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 import {
   AirQualitySnapshot,
   AqiScale,
@@ -88,10 +90,25 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
     setToastMessage(msg);
-    setTimeout(() => setToastMessage((curr) => (curr === msg ? null : curr)), 3200);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage((curr) => (curr === msg ? null : curr));
+      toastTimerRef.current = null;
+    }, TIMEOUTS_MS.TOAST_DISMISS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -112,6 +129,10 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [user?.uid]);
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'ta' ? 'ta' : 'en';
+  }, [language]);
 
   useEffect(() => {
     persistPreferences({ city, persona, scale, language });

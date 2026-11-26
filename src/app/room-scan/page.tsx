@@ -26,8 +26,8 @@ function recordScanLocallyAndRemote(
         scannedAt: new Date().toISOString(),
       })
     );
-  } catch {
-    // Ignore storage write errors
+  } catch (err) {
+    console.warn('[RoomScanPage] Failed to persist latest room scan summary:', err);
   }
 
   if (uid) {

@@ -99,12 +99,6 @@ export const TIME_HORIZONS: Record<
   },
 };
 
-export const EMISSION_FACTORS = {
-  PETROL_CAR_KG_PER_KM: VEHICLE_SEGMENTS.MIDSIZE_SEDAN,
-  MASS_TRANSIT_KG_PER_KM: MASS_TRANSIT_FACTOR,
-  COLD_START_ERRAND_KG_PER_KM: COLD_START_ERRAND_FACTOR,
-};
-
 export const METHOD_VERSION = 'AIRQUA-EM-2026.2';
 
 /**
@@ -152,6 +146,35 @@ export const SIMULATOR_TOGGLES: SimulatorToggleConfig[] = [
     defaultEnabledFor: ['FAMILY_KIDS', 'SENIOR'],
   },
 ];
+
+/**
+ * Action checklist metadata for each simulator swap saved into "Today's Plan".
+ */
+export const SWAP_PLAN_METADATA: Record<
+  'SHIFT_OUTDOOR_TO_SAFE_WINDOW' | 'CAR_TO_TRANSIT' | 'CARPOOL' | 'CONSOLIDATE_TRIPS' | 'KITCHEN_VENTILATION',
+  { title: string; desc: string }
+> = {
+  SHIFT_OUTDOOR_TO_SAFE_WINDOW: {
+    title: 'Shift Outdoor Tasks to Safe Window',
+    desc: 'Reschedule jogging/errands to the verified 24h safe window to avoid peak smog.',
+  },
+  CAR_TO_TRANSIT: {
+    title: 'Switch Solo Car Commute to Metro',
+    desc: 'Take mass transit to isolate from roadside plumes and reduce tailpipe CO2e.',
+  },
+  CARPOOL: {
+    title: 'Carpool / Shared Commute',
+    desc: 'Split vehicle trips with 2+ occupants to cut per-capita emissions.',
+  },
+  CONSOLIDATE_TRIPS: {
+    title: 'Consolidate Weekly Errands',
+    desc: 'Group neighborhood shopping to avoid cold-start vehicle trips.',
+  },
+  KITCHEN_VENTILATION: {
+    title: 'Kitchen Exhaust During High-Heat Cooking',
+    desc: 'Run range hood/exhaust fan during tadka/frying to remove indoor particulate bursts.',
+  },
+};
 
 /**
  * Returns default toggles pre-selected for the given HouseholdPersona.

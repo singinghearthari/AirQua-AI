@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 
-export interface ErrorResponseOptions {
+interface ErrorResponseOptions {
   code?: string;
   details?: unknown;
   headers?: HeadersInit;
@@ -32,7 +33,7 @@ export function getErrorMessage(err: unknown, fallback = 'An unexpected error oc
 /**
  * Extracts the best-effort client IP address from standard proxy headers.
  */
-export function getClientIp(request: NextRequest): string {
+function getClientIp(request: NextRequest): string {
   return (
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
@@ -121,7 +122,7 @@ export async function fetchWithTimeout(
   url: string,
   options: RequestInit & { timeoutMs?: number } = {}
 ): Promise<Response> {
-  const { timeoutMs = 8000, signal: externalSignal, ...fetchOptions } = options;
+  const { timeoutMs = TIMEOUTS_MS.HTTP_DEFAULT, signal: externalSignal, ...fetchOptions } = options;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

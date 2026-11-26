@@ -1,3 +1,5 @@
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+import { setBoundedMapEntry } from '@/lib/security/boundedMap';
 import {
   DataFreshness,
   OpenMeteoAirQualityResponse,
@@ -11,6 +13,7 @@ export interface CacheEntry {
 // In-memory 15-minute server cache
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_AIR_QUALITY_CACHE = 500;
 
 /**
  * Evaluates the data freshness state based on observation timestamp.
@@ -83,7 +86,7 @@ export async function fetchOpenMeteoAirQuality(
   url.searchParams.set('forecast_days', '2');
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS_MS.OPEN_METEO_AIR_QUALITY);
 
   try {
     const res = await fetch(url.toString(), {
@@ -100,12 +103,16 @@ export async function fetchOpenMeteoAirQuality(
     }
 
     const data: OpenMeteoAirQualityResponse = await res.json();
-    cache.set(cacheKey, { data, timestamp: now });
+    setBoundedMapEntry(cache, cacheKey, { data, timestamp: now }, MAX_AIR_QUALITY_CACHE);
     return data;
   } catch (err) {
     clearTimeout(timeoutId);
     // If cache has an expired entry, fall back to it rather than crashing
     if (cached) {
+      console.warn(
+        `[openMeteoProvider] Fetch failed for (${latitude}, ${longitude}), serving stale cached telemetry:`,
+        err instanceof Error ? err.message : err
+      );
       return cached.data;
     }
     throw err;

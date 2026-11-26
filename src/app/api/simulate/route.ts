@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { parseJsonBody } from '@/lib/api/http';
+import { enforceRateLimit, parseJsonBody } from '@/lib/api/http';
 import { runImpactSimulation } from '@/lib/emissions/simulatorEngine';
 import { HouseholdPersona, SimulatorToggleId } from '@/types/airqua';
 
@@ -33,6 +33,9 @@ const SimulateRequestSchema = z.object({
  * Deterministically evaluates Personal Exposure Shift and Emissions Impact (kg CO2e).
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 120, 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const parsed = await parseJsonBody(
     request,
     SimulateRequestSchema,

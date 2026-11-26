@@ -1,14 +1,17 @@
-// In-memory sliding window rate limiter
+import { pruneExpiredMapEntries, setBoundedMapEntry } from './boundedMap';
+
+// Bounded in-memory sliding window rate limiter
 interface RateLimitRecord {
   count: number;
   resetAt: number;
 }
 
+const MAX_RATE_LIMIT_KEYS = 1000;
 const rateLimitMap = new Map<string, RateLimitRecord>();
 
 /**
  * Checks whether an IP or client key is within the allowable rate limit.
- * Default: 10 requests per 60 seconds.
+ * Automatically prunes expired buckets and caps stored keys to protect memory.
  */
 export function checkRateLimit(
   key: string,
@@ -18,9 +21,16 @@ export function checkRateLimit(
   const now = Date.now();
   const record = rateLimitMap.get(key);
 
-  // Evict expired entries
   if (!record || now > record.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    if (rateLimitMap.size >= MAX_RATE_LIMIT_KEYS) {
+      pruneExpiredMapEntries(rateLimitMap, (entry) => now > entry.resetAt);
+    }
+    setBoundedMapEntry(
+      rateLimitMap,
+      key,
+      { count: 1, resetAt: now + windowMs },
+      MAX_RATE_LIMIT_KEYS
+    );
     return { allowed: true, remaining: limit - 1, retryAfterSec: 0 };
   }
 

@@ -17,6 +17,7 @@ export interface VisionRouterParams {
 export interface VisionRouterResult {
   result: RoomScanResult;
   aiProvider: AIProvider;
+  isFallback?: boolean;
 }
 
 export const MANDATORY_SENSOR_NOTICE =
@@ -219,6 +220,6 @@ export async function routeVisionCompletion(
       }
     }
 
-    return { result: buildDefaultRoomScanFallback(), aiProvider: 'gemini' };
+    return { result: buildDefaultRoomScanFallback(), aiProvider: 'gemini', isFallback: true };
   }
 }

@@ -54,7 +54,8 @@ export function loadStoredChatMessages(): MessageItem[] | null {
     if (!stored) return null;
     const parsed = JSON.parse(stored) as MessageItem[];
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
-  } catch {
+  } catch (err) {
+    console.warn('[chatStorage] Failed to parse stored chat messages:', err);
     return null;
   }
 }
@@ -63,7 +64,8 @@ export function loadAutoReadPreference(): boolean {
   if (typeof window === 'undefined') return false;
   try {
     return localStorage.getItem(STORAGE_AUTO_READ_KEY) === 'true';
-  } catch {
+  } catch (err) {
+    console.warn('[chatStorage] Failed to read auto-read preference:', err);
     return false;
   }
 }
@@ -79,14 +81,16 @@ export function loadCrossScreenContext(): {
   try {
     const rawScan = localStorage.getItem('airqua_last_room_scan_v2');
     if (rawScan) roomScan = JSON.parse(rawScan);
-  } catch {
+  } catch (err) {
+    console.warn('[chatStorage] Failed to parse stored room scan summary:', err);
     roomScan = null;
   }
 
   try {
     const rawSwaps = localStorage.getItem('airqua_simulator_swaps_v2');
     if (rawSwaps) simulatorSwaps = JSON.parse(rawSwaps) as string[];
-  } catch {
+  } catch (err) {
+    console.warn('[chatStorage] Failed to parse stored simulator swaps:', err);
     simulatorSwaps = null;
   }
 

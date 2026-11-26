@@ -29,6 +29,11 @@ function asMockGroqVoiceClient(
 
 describe('/api/voice/transcribe', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 
@@ -146,6 +151,11 @@ describe('/api/voice/transcribe', () => {
 
 describe('/api/voice/speak', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 

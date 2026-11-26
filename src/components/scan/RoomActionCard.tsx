@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
 import {
   Bed,
   BookmarkPlus,
@@ -40,6 +41,15 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
   const { saveAction, t } = useAirqua();
   const [completedChecklist, setCompletedChecklist] = useState<Record<number, boolean>>({});
   const [savedToPlan, setSavedToPlan] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) {
+        clearTimeout(savedTimerRef.current);
+      }
+    };
+  }, []);
 
   const toggleChecklistItem = (idx: number) => {
     setCompletedChecklist((prev) => ({ ...prev, [idx]: !prev[idx] }));
@@ -54,7 +64,13 @@ export default function RoomActionCard({ result }: RoomActionCardProps) {
       });
     });
     setSavedToPlan(true);
-    setTimeout(() => setSavedToPlan(false), 3000);
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current);
+    }
+    savedTimerRef.current = setTimeout(() => {
+      setSavedToPlan(false);
+      savedTimerRef.current = null;
+    }, TIMEOUTS_MS.SAVED_BADGE_RESET);
   };
 
   return (

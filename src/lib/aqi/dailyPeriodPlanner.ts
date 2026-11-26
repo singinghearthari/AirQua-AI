@@ -92,7 +92,7 @@ const GUIDANCE_MATRIX: Record<HouseholdPersona, PersonaGuidanceMap> = {
 /**
  * Maps an average PM2.5 concentration to a deterministic risk tier.
  */
-export function classifyPm25RiskLevel(avgPm25: number | null): RiskLevel {
+function classifyPm25RiskLevel(avgPm25: number | null): RiskLevel {
   if (avgPm25 === null || isNaN(avgPm25)) return 'UNKNOWN';
   if (avgPm25 <= 30) return 'LOW';
   if (avgPm25 <= 90) return 'MODERATE';

@@ -77,8 +77,8 @@ export function useChatSession(params: UseChatSessionParams) {
     if (messages.length <= 1) return;
     try {
       localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(messages));
-    } catch {
-      // Ignore storage quota errors
+    } catch (err) {
+      console.warn('[useChatSession] Failed to persist chat history to localStorage:', err);
     }
     if (uid) {
       saveChatConversation(uid, messages).catch((err) =>
@@ -93,8 +93,8 @@ export function useChatSession(params: UseChatSessionParams) {
     setError(null);
     try {
       localStorage.removeItem(STORAGE_CHAT_KEY);
-    } catch {
-      // Ignore storage errors
+    } catch (err) {
+      console.warn('[useChatSession] Failed to clear chat history from localStorage:', err);
     }
     if (uid) await clearChatConversation(uid);
   }, [cityName, language, persona, stopSpeaking, uid]);

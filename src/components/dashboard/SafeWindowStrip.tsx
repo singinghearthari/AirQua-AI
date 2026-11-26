@@ -17,7 +17,8 @@ function formatHourLabel(isoString: string): string {
       minute: '2-digit',
       hour12: true,
     });
-  } catch {
+  } catch (err) {
+    console.warn('[SafeWindowStrip] Failed to format hour label:', isoString, err);
     return isoString;
   }
 }
@@ -30,7 +31,8 @@ function format24h(isoString: string | undefined): string | null {
       minute: '2-digit',
       hour12: false,
     });
-  } catch {
+  } catch (err) {
+    console.warn('[SafeWindowStrip] Failed to format 24h time:', isoString, err);
     return null;
   }
 }

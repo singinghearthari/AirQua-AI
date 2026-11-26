@@ -7,72 +7,59 @@ import { useAirqua } from '@/context/AirquaContext';
 import { useAuth } from '@/context/AuthContext';
 import { saveActivityHistory } from '@/lib/firebase/userStore';
 import {
+  HouseholdPersona,
   SimulatorToggleId,
   TimeHorizon,
   VehicleSegmentId,
 } from '@/types/airqua';
-import { getDefaultTogglesForPersona } from '@/lib/emissions/factors';
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+import { getDefaultTogglesForPersona, SWAP_PLAN_METADATA } from '@/lib/emissions/factors';
 import { runImpactSimulation } from '@/lib/emissions/simulatorEngine';
 import RoutineToggleList from '@/components/simulator/RoutineToggleList';
 import DualImpactMeters from '@/components/simulator/DualImpactMeters';
 import MathAssumptionsDrawer from '@/components/simulator/MathAssumptionsDrawer';
 import SimulatorCommitBar from '@/components/simulator/SimulatorCommitBar';
 
-const SWAP_PLAN_METADATA: Record<SimulatorToggleId, { title: string; desc: string }> = {
-  SHIFT_OUTDOOR_TO_SAFE_WINDOW: {
-    title: 'Shift Outdoor Tasks to Safe Window',
-    desc: 'Reschedule jogging/errands to the verified 24h safe window to avoid peak smog.',
-  },
-  CAR_TO_TRANSIT: {
-    title: 'Switch Solo Car Commute to Metro',
-    desc: 'Take mass transit to isolate from roadside plumes and reduce tailpipe CO2e.',
-  },
-  CARPOOL: {
-    title: 'Carpool / Shared Commute',
-    desc: 'Split vehicle trips with 2+ occupants to cut per-capita emissions.',
-  },
-  CONSOLIDATE_TRIPS: {
-    title: 'Consolidate Weekly Errands',
-    desc: 'Group neighborhood shopping to avoid cold-start vehicle trips.',
-  },
-  KITCHEN_VENTILATION: {
-    title: 'Kitchen Exhaust During High-Heat Cooking',
-    desc: 'Run range hood/exhaust fan during tadka/frying to remove indoor particulate bursts.',
-  },
-};
-
 export default function SimulatorPage() {
   const router = useRouter();
   const { persona, city, snapshot, safeWindows, saveAction, t } = useAirqua();
   const { user } = useAuth();
-  const [isSavedToPlan, setIsSavedToPlan] = useState(false);
 
-  const [prevPersona, setPrevPersona] = useState(persona);
-  const [activeToggles, setActiveToggles] = useState<SimulatorToggleId[]>(() =>
-    getDefaultTogglesForPersona(persona) as SimulatorToggleId[]
-  );
+  const [toggleOverrides, setToggleOverrides] = useState<
+    Partial<Record<HouseholdPersona, SimulatorToggleId[]>>
+  >({});
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [vehicleSegment, setVehicleSegment] = useState<VehicleSegmentId>('MIDSIZE_SEDAN');
   const [timeHorizon, setTimeHorizon] = useState<TimeHorizon>('DAY');
   const [commuteDistanceKm, setCommuteDistanceKm] = useState(15);
   const [carpoolOccupancy, setCarpoolOccupancy] = useState(2);
   const [savedErrandKm, setSavedErrandKm] = useState(5);
 
-  if (persona !== prevPersona) {
-    setPrevPersona(persona);
-    setActiveToggles(getDefaultTogglesForPersona(persona) as SimulatorToggleId[]);
-    setIsSavedToPlan(false);
-  }
+  const activeToggles = useMemo(
+    () =>
+      toggleOverrides[persona] ??
+      (getDefaultTogglesForPersona(persona) as SimulatorToggleId[]),
+    [toggleOverrides, persona]
+  );
+
+  const activeSignature = `${persona}:${activeToggles.join(',')}`;
+  const isSavedToPlan = savedSignature === activeSignature;
 
   const handleToggle = (id: SimulatorToggleId) => {
-    setIsSavedToPlan(false);
-    setActiveToggles((prev) =>
-      prev.includes(id) ? prev.filter((tId) => tId !== id) : [...prev, id]
-    );
+    setSavedSignature(null);
+    const next = activeToggles.includes(id)
+      ? activeToggles.filter((tId) => tId !== id)
+      : [...activeToggles, id];
+    setToggleOverrides((prev) => ({ ...prev, [persona]: next }));
   };
 
   const handleResetToDefaults = () => {
-    setIsSavedToPlan(false);
-    setActiveToggles(getDefaultTogglesForPersona(persona) as SimulatorToggleId[]);
+    setSavedSignature(null);
+    setToggleOverrides((prev) => {
+      const next = { ...prev };
+      delete next[persona];
+      return next;
+    });
     setVehicleSegment('MIDSIZE_SEDAN');
     setTimeHorizon('DAY');
     setCommuteDistanceKm(15);
@@ -93,14 +80,14 @@ export default function SimulatorPage() {
         });
       }
     });
-    setIsSavedToPlan(true);
+    setSavedSignature(activeSignature);
   };
 
   const handleAskAIConsultant = () => {
     try {
       localStorage.setItem('airqua_simulator_swaps_v2', JSON.stringify(activeToggles));
-    } catch {
-      // Ignore storage failures
+    } catch (err) {
+      console.warn('[SimulatorPage] Failed to persist simulator swaps before navigation:', err);
     }
     router.push('/assistant');
   };
@@ -143,8 +130,8 @@ export default function SimulatorPage() {
   useEffect(() => {
     try {
       localStorage.setItem('airqua_simulator_swaps_v2', JSON.stringify(activeToggles));
-    } catch {
-      // Ignore storage failures
+    } catch (err) {
+      console.warn('[SimulatorPage] Failed to persist active simulator swaps:', err);
     }
   }, [activeToggles]);
 
@@ -163,7 +150,7 @@ export default function SimulatorPage() {
           co2eMaxKg: simulationResult.emissionsImpact.co2eMaxKg,
         },
       }).catch((err) => console.warn('Failed to record simulation activity:', err));
-    }, 2500);
+    }, TIMEOUTS_MS.SIMULATION_LOG_DEBOUNCE);
 
     return () => clearTimeout(timer);
   }, [

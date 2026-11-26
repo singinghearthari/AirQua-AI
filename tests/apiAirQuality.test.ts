@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET as airQualityHandler } from '@/app/api/air-quality/route';
 import { clearOpenMeteoCache } from '@/lib/aqi/openMeteoProvider';
 import { NextRequest } from 'next/server';
@@ -86,8 +86,13 @@ function createMockTelemetryFetch() {
 
 describe('/api/air-quality', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     clearOpenMeteoCache();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('rejects requests with missing latitude or longitude', async () => {

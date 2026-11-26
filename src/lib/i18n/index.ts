@@ -10,8 +10,6 @@ export const DICTIONARY: TranslationDictionary = {
   ta: TA_TRANSLATIONS,
 };
 
-export const TRANSLATIONS = DICTIONARY;
-
 /**
  * Returns the localized UI dictionary for the active language (`en` or `ta`).
  */

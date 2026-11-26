@@ -55,16 +55,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { result, aiProvider } = await routeVisionCompletion({
+    const { result, aiProvider, isFallback } = await routeVisionCompletion({
       image: base64Data,
       mimeType,
       persona: persona as HouseholdPersona,
       language: language as SupportedLanguage,
     });
 
+    if (isFallback) {
+      return NextResponse.json(
+        { result: { ...result, aiProvider }, isFallback: true },
+        { headers: { 'X-Airqua-Fallback': 'true' } }
+      );
+    }
+
     return NextResponse.json({ result: { ...result, aiProvider } });
   } catch (error: unknown) {
     console.error('[api/room-scan] error:', error);
-    return NextResponse.json({ result: buildDefaultRoomScanFallback() });
+    return NextResponse.json(
+      { result: buildDefaultRoomScanFallback(), isFallback: true },
+      { headers: { 'X-Airqua-Fallback': 'true' } }
+    );
   }
 }

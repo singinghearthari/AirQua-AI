@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Zod schema validating an individual Room & Smog Scan finding card.
- */
-export const RoomScanFindingSchema = z.object({
+const RoomScanFindingSchema = z.object({
   item: z.string().min(1, 'Item title is required'),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']),
   mechanism: z.string().min(1, 'Mechanism explanation is required'),
@@ -22,9 +19,6 @@ export const RoomScanResultSchema = z.object({
   sensorBoundaryNotice: z.string().min(1, 'Sensor boundary notice is mandatory'),
   dataKind: z.literal('AI_EXPLANATION').default('AI_EXPLANATION'),
 });
-
-export type RoomScanFindingParsed = z.infer<typeof RoomScanFindingSchema>;
-export type RoomScanResultParsed = z.infer<typeof RoomScanResultSchema>;
 
 /**
  * Strips Markdown JSON code fences (e.g. ```json ... ```) from LLM output before `JSON.parse`.
@@ -45,7 +39,7 @@ export function stripJsonCodeFences(raw: string): string {
 /**
  * Zod schema validating a single structured action recommended by the AI Consultant.
  */
-export const RecommendedActionSchema = z.object({
+const RecommendedActionSchema = z.object({
   title: z.string().min(1, 'Action title is required'),
   category: z
     .preprocess(

@@ -63,22 +63,42 @@ export function useSavedActions(uid: string | undefined, showToast: (msg: string
     [uid, showToast]
   );
 
-  const toggleActionCompleted = useCallback((id: string) => {
-    setSavedActions((prev) => {
-      const updated = prev.map((a) => (a.id === id ? { ...a, completed: !a.completed } : a));
-      persistActions(updated);
-      return updated;
-    });
-  }, []);
+  const toggleActionCompleted = useCallback(
+    (id: string) => {
+      const target = savedActionsRef.current.find((a) => a.id === id);
+      const toggledItem = target ? { ...target, completed: !target.completed } : null;
+
+      setSavedActions((prev) => {
+        const updated = prev.map((a) => (a.id === id ? { ...a, completed: !a.completed } : a));
+        persistActions(updated);
+        return updated;
+      });
+
+      if (uid && toggledItem) {
+        saveActionToFirestore(uid, toggledItem).catch((err) =>
+          console.warn('Failed to update action completion in Firestore:', err)
+        );
+      }
+    },
+    [uid]
+  );
 
   const clearCompletedActions = useCallback(() => {
+    const completedIds = savedActionsRef.current.filter((a) => a.completed).map((a) => a.id);
+
     setSavedActions((prev) => {
       const updated = prev.filter((a) => !a.completed);
       persistActions(updated);
       return updated;
     });
     showToast('Cleared completed actions');
-  }, [showToast]);
+
+    if (uid && completedIds.length > 0) {
+      Promise.all(completedIds.map((id) => removeActionFromFirestore(uid, id))).catch((err) =>
+        console.warn('Failed to clear completed actions in Firestore:', err)
+      );
+    }
+  }, [uid, showToast]);
 
   const removeAction = useCallback(
     (id: string) => {

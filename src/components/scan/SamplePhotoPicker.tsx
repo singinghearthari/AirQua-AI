@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Flame, Wind, CloudFog, CheckCircle2, Sparkles } from 'lucide-react';
 
-export interface SampleItem {
+interface SampleItem {
   id: string;
   title: string;
   subtitle: string;
@@ -12,7 +12,7 @@ export interface SampleItem {
   tag: string;
 }
 
-export const SAMPLE_PHOTOS: SampleItem[] = [
+const SAMPLE_PHOTOS: SampleItem[] = [
   {
     id: 'kitchen',
     title: 'Urban Kitchen Stove',

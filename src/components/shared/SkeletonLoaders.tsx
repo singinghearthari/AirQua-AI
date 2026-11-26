@@ -65,19 +65,3 @@ export function RoomScanSkeleton() {
     </div>
   );
 }
-
-export function SimulatorSkeleton() {
-  return (
-    <div
-      className="flex flex-col gap-6 animate-pulse"
-      aria-busy="true"
-      aria-label="Calculating deterministic emissions"
-    >
-      <div className="h-24 rounded-xl border border-outline-variant bg-surface-container-lowest p-6" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="h-48 rounded-xl border border-outline-variant bg-surface-container-lowest" />
-        <div className="h-48 rounded-xl border border-outline-variant bg-surface-container-lowest" />
-      </div>
-    </div>
-  );
-}

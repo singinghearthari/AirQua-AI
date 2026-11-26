@@ -63,6 +63,8 @@ export default function EmailPasswordForm({
           ref={emailInputRef}
           type="email"
           required
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'auth-form-error' : undefined}
           value={email}
           onChange={(e) => onChangeEmail(e.target.value)}
           placeholder="name@example.com"
@@ -83,6 +85,8 @@ export default function EmailPasswordForm({
           type="password"
           required
           minLength={6}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'auth-form-error' : undefined}
           value={password}
           onChange={(e) => onChangePassword(e.target.value)}
           placeholder="••••••••"
@@ -92,6 +96,7 @@ export default function EmailPasswordForm({
 
       {error && (
         <div
+          id="auth-form-error"
           role="alert"
           className="rounded-lg border border-error/30 bg-error-container p-2.5 text-on-error-container text-[12px] flex items-center gap-2"
         >

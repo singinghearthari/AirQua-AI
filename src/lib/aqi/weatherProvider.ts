@@ -1,6 +1,8 @@
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+import { setBoundedMapEntry } from '@/lib/security/boundedMap';
 import { DispersionStatus, WeatherTelemetry } from '@/types/airqua';
 
-export interface RawOpenMeteoWeatherResponse {
+interface RawOpenMeteoWeatherResponse {
   current?: {
     time?: string;
     temperature_2m?: number;
@@ -76,6 +78,7 @@ interface CachedWeather {
 }
 const weatherCache = new Map<string, CachedWeather>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_WEATHER_CACHE = 500;
 
 /**
  * Fetches live weather telemetry from Open-Meteo Forecast API.
@@ -96,7 +99,7 @@ export async function fetchLiveWeather(
   const endpoint = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&timezone=auto`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS_MS.WEATHER_TELEMETRY);
 
   try {
     const res = await fetch(endpoint, {
@@ -150,7 +153,7 @@ export async function fetchLiveWeather(
       dispersionNote: note,
     };
 
-    weatherCache.set(cacheKey, { data: telemetry, timestamp: now });
+    setBoundedMapEntry(weatherCache, cacheKey, { data: telemetry, timestamp: now }, MAX_WEATHER_CACHE);
     return telemetry;
   } catch (err) {
     clearTimeout(timeoutId);

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET as geocodeHandler } from '@/app/api/geocode/route';
 import { NextRequest } from 'next/server';
 
@@ -10,6 +10,10 @@ interface GeocodeCityResult {
 
 describe('/api/geocode', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 

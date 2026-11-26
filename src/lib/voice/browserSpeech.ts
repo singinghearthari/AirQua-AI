@@ -1,5 +1,6 @@
+import { TIMEOUTS_MS } from '@/lib/config/timeouts';
+
 const TAMIL_UNICODE_REGEX = /[\u0B80-\u0BFF]/;
-const VOICE_WAIT_TIMEOUT_MS = 150;
 
 export interface SpeechVoiceLike {
   name: string;
@@ -230,7 +231,7 @@ export function speakWithBrowserSynthesis({
       removeVoiceListener = () => synth.removeEventListener('voiceschanged', finalize);
     }
 
-    timeoutId = setTimeout(finalize, VOICE_WAIT_TIMEOUT_MS);
+    timeoutId = setTimeout(finalize, TIMEOUTS_MS.VOICE_HYDRATION);
 
     return () => {
       settled = true;
