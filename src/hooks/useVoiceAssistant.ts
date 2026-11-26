@@ -4,12 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { SupportedLanguage } from '@/types/airqua';
 import {
   getBrowserSpeechRecognition,
-  speakWithBrowserSynthesis,
   SpeechRecognitionInstance,
 } from '@/lib/voice/browserSpeech';
 import { startMediaRecorderCapture } from '@/lib/voice/mediaRecorderCapture';
 import {
-  playEnglishGroqOrFallback,
+  playServerSpeechOrFallback,
   resetActiveAudioElement,
 } from '@/lib/voice/groqSpeechPlayback';
 import {
@@ -195,30 +194,19 @@ export function useVoiceAssistant(
       const cleanText = stripMarkdownForSpeech(text);
       if (!cleanText) return;
 
-      // Always determine TTS engine from the message script itself, independent of UI language toggle
+      // Always determine TTS language from the message script itself, independent of UI toggle
       const detectedLang = detectMessageLanguage(cleanText);
 
-      if (detectedLang === 'en') {
-        await playEnglishGroqOrFallback({
-          cleanText,
-          synth: synthRef.current,
-          activeAudioRef,
-          activeAudioUrlRef,
-          onStart: () => setIsSpeaking(true),
-          onDone: () => setIsSpeaking(false),
-          onVoiceNotice: setVoiceNotice,
-        });
-        return;
-      }
-
-      await speakWithBrowserSynthesis(
-        synthRef.current,
+      await playServerSpeechOrFallback({
         cleanText,
-        'ta',
-        () => setIsSpeaking(true),
-        () => setIsSpeaking(false),
-        setVoiceNotice
-      );
+        targetLang: detectedLang,
+        synth: synthRef.current,
+        activeAudioRef,
+        activeAudioUrlRef,
+        onStart: () => setIsSpeaking(true),
+        onDone: () => setIsSpeaking(false),
+        onVoiceNotice: setVoiceNotice,
+      });
     },
     [stopSpeaking]
   );

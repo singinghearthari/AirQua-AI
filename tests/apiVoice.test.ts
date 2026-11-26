@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST as transcribeHandler } from '@/app/api/voice/transcribe/route';
 import { POST as speakHandler } from '@/app/api/voice/speak/route';
-import { detectMessageLanguage } from '@/lib/voice/speechUtils';
+import {
+  detectMessageLanguage,
+  stripMarkdownForSpeech,
+} from '@/lib/voice/speechUtils';
 import { speakWithBrowserSynthesis } from '@/lib/voice/browserSpeech';
 import * as groqClientModule from '@/lib/ai/groqClient';
 import { NextRequest } from 'next/server';
@@ -178,7 +181,46 @@ describe('/api/voice/speak', () => {
     expect(json.error).toMatch(/empty after sanitization/i);
   });
 
-  it('returns fallbackToBrowserTTS for Tamil (ta) to use native browser voices', async () => {
+  it('returns audio/mpeg for Tamil text across chunks without stripping Tamil Unicode', async () => {
+    const capturedUrls: string[] = [];
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      capturedUrls.push(String(input));
+      return new Response(new Uint8Array([0xff, 0xfb, 0x90, 0x00]), {
+        status: 200,
+        headers: { 'Content-Type': 'audio/mpeg' },
+      });
+    });
+
+    const longTamilText = `**எச்சரிக்கை:** சென்னையில் காற்று தரம் மிதமாக உள்ளது. ${'வெளிப்புற நடைப்பயணத்தை பாதுகாப்பான நேரத்திற்கு மாற்றுங்கள். '.repeat(4)}https://cpcb.nic.in`;
+    const req = new NextRequest('http://localhost:3000/api/voice/speak', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: longTamilText,
+        language: 'ta',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await speakHandler(req);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('audio/mpeg');
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+
+    const audioBytes = new Uint8Array(await res.arrayBuffer());
+    expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(audioBytes.byteLength).toBe(fetchSpy.mock.calls.length * 4);
+
+    const decodedQuery = decodeURIComponent(capturedUrls[0].split('q=')[1] || '');
+    expect(decodedQuery).toContain('எச்சரிக்கை: சென்னையில் காற்று தரம்');
+    expect(decodedQuery).not.toContain('**');
+    expect(capturedUrls.join(' ')).not.toContain('cpcb.nic.in');
+  });
+
+  it('returns structured fallback JSON for Tamil when upstream TTS fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('Upstream Error', { status: 503 })
+    );
+
     const req = new NextRequest('http://localhost:3000/api/voice/speak', {
       method: 'POST',
       body: JSON.stringify({
@@ -193,14 +235,21 @@ describe('/api/voice/speak', () => {
     expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
     const json = await res.json();
 
+    expect(json.fallback).toBe('browser-tts');
     expect(json.fallbackToBrowserTTS).toBe(true);
-    expect(json.reason).toContain('Tamil');
+    expect(json.language).toBe('ta');
   });
 
   it('never sends Tamil text to Groq Orpheus even when request language param is en', async () => {
     const mockSpeechCreate = vi.fn();
     vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
       asMockGroqVoiceClient({ speechCreate: mockSpeechCreate })
+    );
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(new Uint8Array([0xff, 0xfb]), {
+        status: 200,
+        headers: { 'Content-Type': 'audio/mpeg' },
+      })
     );
 
     const req = new NextRequest('http://localhost:3000/api/voice/speak', {
@@ -214,9 +263,8 @@ describe('/api/voice/speak', () => {
 
     const res = await speakHandler(req);
     expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('audio/mpeg');
     expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
-    const json = await res.json();
-    expect(json.fallbackToBrowserTTS).toBe(true);
     expect(mockSpeechCreate).not.toHaveBeenCalled();
   });
 
@@ -364,7 +412,14 @@ describe('Bilingual Message Language Detection & Browser Synthesis', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('emits a clear inline notice when Tamil playback finds no installed Tamil browser voice', async () => {
+  it('preserves Tamil Unicode words while stripping Markdown and URLs', () => {
+    const cleaned = stripMarkdownForSpeech(
+      '**எச்சரிக்கை:** சென்னையில் *PM2.5* அளவு `145`. https://cpcb.nic.in'
+    );
+    expect(cleaned).toBe('எச்சரிக்கை: சென்னையில் PM2.5 அளவு 145.');
+  });
+
+  it('refuses to pass Tamil text to English OS speechSynthesis and emits unavailable notice', async () => {
     class MockUtterance {
       text: string;
       lang = '';
@@ -387,10 +442,7 @@ describe('Bilingual Message Language Detection & Browser Synthesis', () => {
       getVoices: vi.fn(() => [englishOnlyVoice]),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
-      speak: vi.fn((u: SpeechSynthesisUtterance) => {
-        const utt = u as unknown as MockUtterance;
-        utt.onend?.();
-      }),
+      speak: vi.fn(),
     } as unknown as SpeechSynthesis;
 
     const onNotice = vi.fn();
@@ -405,7 +457,10 @@ describe('Bilingual Message Language Detection & Browser Synthesis', () => {
       onNotice
     );
 
-    expect(onNotice).toHaveBeenCalledWith(expect.stringMatching(/No Tamil browser voice/i));
+    expect(mockSynth.speak).not.toHaveBeenCalled();
+    expect(onNotice).toHaveBeenCalledWith(
+      'Tamil voice audio is temporarily unavailable on this device'
+    );
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

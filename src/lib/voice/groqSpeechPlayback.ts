@@ -1,8 +1,9 @@
 import { SupportedLanguage } from '@/types/airqua';
 import { speakWithBrowserSynthesis } from './browserSpeech';
 
-export interface GroqSpeechPlaybackOptions {
+export interface ServerSpeechPlaybackOptions {
   cleanText: string;
+  targetLang: SupportedLanguage;
   synth: SpeechSynthesis | null;
   activeAudioRef: { current: HTMLAudioElement | null };
   activeAudioUrlRef: { current: string | null };
@@ -34,14 +35,15 @@ export function resetActiveAudioElement(
 }
 
 /**
- * Requests English neural speech from `/api/voice/speak` (Groq Orpheus) and transparently
- * falls back to browser `SpeechSynthesis` (`en-IN`/`en-US`) on API failure or blocked autoplay.
+ * Fetches server TTS audio (`/api/voice/speak`) for English (`audio/wav`) or Tamil (`audio/mpeg`)
+ * and transparently falls back to language-guarded browser `SpeechSynthesis` on failure or blocked autoplay.
  */
-export async function playEnglishGroqOrFallback(
-  options: GroqSpeechPlaybackOptions
+export async function playServerSpeechOrFallback(
+  options: ServerSpeechPlaybackOptions
 ): Promise<void> {
   const {
     cleanText,
+    targetLang,
     synth,
     activeAudioRef,
     activeAudioUrlRef,
@@ -50,14 +52,14 @@ export async function playEnglishGroqOrFallback(
     onVoiceNotice,
   } = options;
 
-  const fallbackToBrowser = (lang: SupportedLanguage = 'en') =>
-    speakWithBrowserSynthesis(synth, cleanText, lang, onStart, onDone, onVoiceNotice);
+  const fallbackToBrowser = () =>
+    speakWithBrowserSynthesis(synth, cleanText, targetLang, onStart, onDone, onVoiceNotice);
 
   try {
     const res = await fetch('/api/voice/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, language: 'en' }),
+      body: JSON.stringify({ text: cleanText, language: targetLang }),
     });
 
     const contentType = res.headers.get('content-type') || '';
@@ -76,7 +78,7 @@ export async function playEnglishGroqOrFallback(
       };
       audio.onerror = () => {
         resetActiveAudioElement(activeAudioRef, activeAudioUrlRef);
-        void fallbackToBrowser('en');
+        void fallbackToBrowser();
       };
 
       try {
@@ -88,8 +90,8 @@ export async function playEnglishGroqOrFallback(
       }
     }
   } catch (fetchErr) {
-    console.warn('Groq speech endpoint fetch failed, falling back to browser synthesis:', fetchErr);
+    console.warn('Speech endpoint fetch failed, falling back to browser synthesis:', fetchErr);
   }
 
-  await fallbackToBrowser('en');
+  await fallbackToBrowser();
 }

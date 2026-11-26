@@ -97,8 +97,8 @@ function selectPreferredVoice(
 }
 
 /**
- * Speaks sanitized text via the browser `SpeechSynthesis` API in Indian English (`en-IN`) or
- * Tamil (`ta-IN`), resolving async voice lists and surfacing a clear notice if no Tamil voice exists.
+ * Speaks sanitized text via the browser `SpeechSynthesis` API in Indian English (`en-IN`/`en-US`) or
+ * Tamil (`ta-IN`). Never falls back to a non-Tamil voice for Tamil text so Tamil words are never skipped.
  */
 export async function speakWithBrowserSynthesis(
   synth: SpeechSynthesis | null,
@@ -109,6 +109,9 @@ export async function speakWithBrowserSynthesis(
   onVoiceNotice?: (notice: string | null) => void
 ): Promise<void> {
   if (!synth || !cleanText) {
+    if (lang === 'ta') {
+      onVoiceNotice?.('Tamil voice audio is temporarily unavailable on this device');
+    }
     onDone();
     return;
   }
@@ -119,15 +122,15 @@ export async function speakWithBrowserSynthesis(
     const preferredVoice = selectPreferredVoice(voices, lang);
 
     if (lang === 'ta' && !preferredVoice) {
-      onVoiceNotice?.(
-        'No Tamil browser voice is installed on this device; audio playback may be unavailable or fall back to your default system voice.'
-      );
-    } else {
-      onVoiceNotice?.(null);
+      onVoiceNotice?.('Tamil voice audio is temporarily unavailable on this device');
+      onDone();
+      return;
     }
 
+    onVoiceNotice?.(null);
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
+    utterance.lang = lang === 'ta' ? 'ta-IN' : preferredVoice?.lang || 'en-IN';
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
