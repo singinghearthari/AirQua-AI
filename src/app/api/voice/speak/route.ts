@@ -5,9 +5,13 @@ import {
   enforceRateLimit,
   getErrorMessage,
   jsonError,
+  jsonOk,
   parseJsonBody,
 } from '@/lib/api/http';
-import { stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
+import {
+  detectMessageLanguage,
+  stripMarkdownForSpeech,
+} from '@/lib/voice/speechUtils';
 
 export const runtime = 'nodejs';
 
@@ -40,17 +44,17 @@ export async function POST(request: NextRequest) {
   }
 
   const groq = getGroqClient();
-  if (language === 'ta' || !groq) {
-    return NextResponse.json(
-      {
-        fallbackToBrowserTTS: true,
-        reason:
-          language === 'ta'
-            ? 'Tamil speech synthesis uses native Indian Tamil neural voices in browser'
-            : 'Groq API key unconfigured',
-      },
-      { status: 200 }
-    );
+  const effectiveLang =
+    language === 'ta' || detectMessageLanguage(cleanText) === 'ta' ? 'ta' : 'en';
+
+  if (effectiveLang === 'ta' || !groq) {
+    return jsonOk({
+      fallbackToBrowserTTS: true,
+      reason:
+        effectiveLang === 'ta'
+          ? 'Tamil speech synthesis uses native Indian Tamil neural voices in browser'
+          : 'Groq API key unconfigured',
+    });
   }
 
   try {
@@ -69,6 +73,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'audio/wav',
         'Content-Length': arrayBuffer.byteLength.toString(),
         'Cache-Control': 'public, max-age=3600',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (err: unknown) {
@@ -78,12 +83,9 @@ export async function POST(request: NextRequest) {
       message
     );
 
-    return NextResponse.json(
-      {
-        fallbackToBrowserTTS: true,
-        reason: message,
-      },
-      { status: 200 }
-    );
+    return jsonOk({
+      fallbackToBrowserTTS: true,
+      reason: message,
+    });
   }
 }

@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST as transcribeHandler } from '@/app/api/voice/transcribe/route';
 import { POST as speakHandler } from '@/app/api/voice/speak/route';
+import { detectMessageLanguage } from '@/lib/voice/speechUtils';
+import { speakWithBrowserSynthesis } from '@/lib/voice/browserSpeech';
 import * as groqClientModule from '@/lib/ai/groqClient';
 import { NextRequest } from 'next/server';
 
@@ -74,11 +76,18 @@ describe('/api/voice/transcribe', () => {
 
     const res = await transcribeHandler(req);
     expect(res.status).toBe(200);
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
     const json = await res.json();
 
     expect(json.text).toBe('What is today AQI in Delhi?');
     expect(json.provider).toBe('groq-whisper');
     expect(mockTranscribe).toHaveBeenCalledTimes(1);
+    const whisperCallArg = mockTranscribe.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(whisperCallArg).not.toHaveProperty('language');
+    expect(whisperCallArg).toMatchObject({
+      model: 'whisper-large-v3-turbo',
+      response_format: 'json',
+    });
   });
 
   it('returns status 503 fallback when Groq client is unconfigured', async () => {
@@ -181,10 +190,34 @@ describe('/api/voice/speak', () => {
 
     const res = await speakHandler(req);
     expect(res.status).toBe(200);
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
     const json = await res.json();
 
     expect(json.fallbackToBrowserTTS).toBe(true);
     expect(json.reason).toContain('Tamil');
+  });
+
+  it('never sends Tamil text to Groq Orpheus even when request language param is en', async () => {
+    const mockSpeechCreate = vi.fn();
+    vi.spyOn(groqClientModule, 'getGroqClient').mockReturnValue(
+      asMockGroqVoiceClient({ speechCreate: mockSpeechCreate })
+    );
+
+    const req = new NextRequest('http://localhost:3000/api/voice/speak', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'இன்று காற்றின் தரம் எப்படி உள்ளது?',
+        language: 'en',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await speakHandler(req);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    const json = await res.json();
+    expect(json.fallbackToBrowserTTS).toBe(true);
+    expect(mockSpeechCreate).not.toHaveBeenCalled();
   });
 
   it('rejects text exceeding 1000 characters with status 400', async () => {
@@ -223,6 +256,7 @@ describe('/api/voice/speak', () => {
     const res = await speakHandler(req);
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('audio/wav');
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(mockSpeechCreate).toHaveBeenCalledTimes(1);
   });
 
@@ -246,5 +280,132 @@ describe('/api/voice/speak', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.fallbackToBrowserTTS).toBe(true);
+  });
+});
+
+describe('Bilingual Message Language Detection & Browser Synthesis', () => {
+  const originalUtterance = globalThis.SpeechSynthesisUtterance;
+
+  afterEach(() => {
+    if (originalUtterance === undefined) {
+      Reflect.deleteProperty(globalThis, 'SpeechSynthesisUtterance');
+    } else {
+      globalThis.SpeechSynthesisUtterance = originalUtterance;
+    }
+  });
+
+  it('detectMessageLanguage detects Tamil Unicode script independently of UI state', () => {
+    expect(detectMessageLanguage('சென்னையில் காற்றின் தரம் திருப்திகரமாக உள்ளது.')).toBe('ta');
+    expect(detectMessageLanguage('Delhi AQI 240 — வெளியே செல்லாதீர்கள்.')).toBe('ta');
+    expect(detectMessageLanguage('Avoid outdoor jogging between 6 AM and 9 AM.')).toBe('en');
+    expect(detectMessageLanguage('AQI 145 PM2.5 = 73 ug/m3')).toBe('en');
+  });
+
+  it('resolves async browser voices via voiceschanged and selects ta-IN when available', async () => {
+    class MockUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      pitch = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+    globalThis.SpeechSynthesisUtterance =
+      MockUtterance as unknown as typeof SpeechSynthesisUtterance;
+
+    let voicesLoaded = false;
+    const listenerRef: { cb: (() => void) | null } = { cb: null };
+    const tamilVoice = { lang: 'ta-IN', name: 'Google தமிழ்', default: false } as SpeechSynthesisVoice;
+    let spokenUtterance: MockUtterance | null = null;
+
+    const mockSynth = {
+      cancel: vi.fn(),
+      getVoices: vi.fn(() => (voicesLoaded ? [tamilVoice] : [])),
+      addEventListener: vi.fn((_evt: string, cb: () => void) => {
+        listenerRef.cb = cb;
+      }),
+      removeEventListener: vi.fn(),
+      speak: vi.fn((u: SpeechSynthesisUtterance) => {
+        spokenUtterance = u as unknown as MockUtterance;
+        spokenUtterance.onstart?.();
+        spokenUtterance.onend?.();
+      }),
+    } as unknown as SpeechSynthesis;
+
+    const onStart = vi.fn();
+    const onDone = vi.fn();
+    const onNotice = vi.fn();
+
+    const speakPromise = speakWithBrowserSynthesis(
+      mockSynth,
+      'காற்றின் தரம் மிதமாக உள்ளது.',
+      'ta',
+      onStart,
+      onDone,
+      onNotice
+    );
+
+    voicesLoaded = true;
+    listenerRef.cb?.();
+    await speakPromise;
+
+    expect(mockSynth.cancel).toHaveBeenCalledTimes(1);
+    expect(spokenUtterance).not.toBeNull();
+    const captured = spokenUtterance as MockUtterance | null;
+    expect(captured?.lang).toBe('ta-IN');
+    expect(captured?.voice?.lang).toBe('ta-IN');
+    expect(onNotice).toHaveBeenCalledWith(null);
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits a clear inline notice when Tamil playback finds no installed Tamil browser voice', async () => {
+    class MockUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      pitch = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+    globalThis.SpeechSynthesisUtterance =
+      MockUtterance as unknown as typeof SpeechSynthesisUtterance;
+
+    const englishOnlyVoice = { lang: 'en-US', name: 'English US', default: true } as SpeechSynthesisVoice;
+    const mockSynth = {
+      cancel: vi.fn(),
+      getVoices: vi.fn(() => [englishOnlyVoice]),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      speak: vi.fn((u: SpeechSynthesisUtterance) => {
+        const utt = u as unknown as MockUtterance;
+        utt.onend?.();
+      }),
+    } as unknown as SpeechSynthesis;
+
+    const onNotice = vi.fn();
+    const onDone = vi.fn();
+
+    await speakWithBrowserSynthesis(
+      mockSynth,
+      'காற்றின் தரம்',
+      'ta',
+      vi.fn(),
+      onDone,
+      onNotice
+    );
+
+    expect(onNotice).toHaveBeenCalledWith(expect.stringMatching(/No Tamil browser voice/i));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

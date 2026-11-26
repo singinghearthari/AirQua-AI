@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { parseJsonBody } from '@/lib/api/http';
+import { jsonOk, parseJsonBody } from '@/lib/api/http';
 import { runImpactSimulation } from '@/lib/emissions/simulatorEngine';
 import { HouseholdPersona, SimulatorToggleId } from '@/types/airqua';
 
@@ -52,5 +52,5 @@ export async function POST(request: NextRequest) {
     safeWindowPm25: parsed.data.safeWindowPm25,
   });
 
-  return NextResponse.json({ result });
+  return jsonOk({ result });
 }

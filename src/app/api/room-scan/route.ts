@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
   buildDefaultRoomScanFallback,
   routeVisionCompletion,
 } from '@/lib/ai/providerRouter';
-import { enforceRateLimit, parseJsonBody, jsonError } from '@/lib/api/http';
+import { enforceRateLimit, parseJsonBody, jsonError, jsonOk } from '@/lib/api/http';
 import { HouseholdPersona, SupportedLanguage } from '@/types/airqua';
 
 export const runtime = 'nodejs';
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
       language: language as SupportedLanguage,
     });
 
-    return NextResponse.json({ result: { ...result, aiProvider } });
+    return jsonOk({ result: { ...result, aiProvider } });
   } catch (error: unknown) {
     console.error('[api/room-scan] error:', error);
-    return NextResponse.json({ result: buildDefaultRoomScanFallback() });
+    return jsonOk({ result: buildDefaultRoomScanFallback() });
   }
 }

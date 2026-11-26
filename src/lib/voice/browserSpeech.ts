@@ -56,15 +56,58 @@ export function getBrowserSpeechRecognition(): SpeechRecognitionConstructor | nu
 }
 
 /**
- * Speaks sanitized text via the browser `SpeechSynthesis` API in Indian English (`en-IN`) or Tamil (`ta-IN`).
+ * Awaits asynchronous voice list population (`voiceschanged`) when `synth.getVoices()` initially
+ * returns empty in Chromium/Edge browsers, bounded by a short timeout so playback never stalls.
  */
-export function speakWithBrowserSynthesis(
+async function loadVoicesAsync(synth: SpeechSynthesis): Promise<SpeechSynthesisVoice[]> {
+  const initial = synth.getVoices();
+  if (initial.length > 0) return initial;
+
+  return new Promise<SpeechSynthesisVoice[]>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      synth.removeEventListener?.('voiceschanged', finish);
+      clearTimeout(timer);
+      resolve(synth.getVoices());
+    };
+    const timer = setTimeout(finish, 450);
+    synth.addEventListener?.('voiceschanged', finish, { once: true });
+  });
+}
+
+function selectPreferredVoice(
+  voices: SpeechSynthesisVoice[],
+  lang: SupportedLanguage
+): SpeechSynthesisVoice | null {
+  if (lang === 'ta') {
+    const tamilVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('ta'));
+    return tamilVoices.find((v) => v.lang.toLowerCase() === 'ta-in') ?? tamilVoices[0] ?? null;
+  }
+
+  const englishVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('en'));
+  return (
+    englishVoices.find((v) => v.lang.toLowerCase() === 'en-in') ??
+    englishVoices.find((v) => v.lang.toLowerCase() === 'en-us') ??
+    englishVoices.find((v) => v.default) ??
+    englishVoices[0] ??
+    null
+  );
+}
+
+/**
+ * Speaks sanitized text via the browser `SpeechSynthesis` API in Indian English (`en-IN`) or
+ * Tamil (`ta-IN`), resolving async voice lists and surfacing a clear notice if no Tamil voice exists.
+ */
+export async function speakWithBrowserSynthesis(
   synth: SpeechSynthesis | null,
   cleanText: string,
   lang: SupportedLanguage,
   onStart: () => void,
-  onDone: () => void
-): void {
+  onDone: () => void,
+  onVoiceNotice?: (notice: string | null) => void
+): Promise<void> {
   if (!synth || !cleanText) {
     onDone();
     return;
@@ -72,17 +115,21 @@ export function speakWithBrowserSynthesis(
 
   try {
     synth.cancel();
+    const voices = await loadVoicesAsync(synth);
+    const preferredVoice = selectPreferredVoice(voices, lang);
+
+    if (lang === 'ta' && !preferredVoice) {
+      onVoiceNotice?.(
+        'No Tamil browser voice is installed on this device; audio playback may be unavailable or fall back to your default system voice.'
+      );
+    } else {
+      onVoiceNotice?.(null);
+    }
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
-
-    const voices = synth.getVoices();
-    const preferredVoice = voices.find(
-      (v) =>
-        v.lang.toLowerCase().startsWith(lang === 'ta' ? 'ta' : 'en') &&
-        (v.lang.includes('IN') || v.default)
-    );
 
     if (preferredVoice) {
       utterance.voice = preferredVoice;

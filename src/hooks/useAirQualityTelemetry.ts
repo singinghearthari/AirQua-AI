@@ -18,6 +18,7 @@ export function useAirQualityTelemetry(params: {
   simulateStale: boolean;
 }) {
   const { city, scale, persona, simulateStale } = params;
+  const { latitude, longitude, name, region } = city;
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [snapshot, setSnapshot] = useState<AirQualitySnapshot | null>(null);
   const [safeWindows, setSafeWindows] = useState<SafeWindowSummary | null>(null);
@@ -28,10 +29,10 @@ export function useAirQualityTelemetry(params: {
     let isCurrent = true;
     const controller = new AbortController();
     const query = new URLSearchParams({
-      lat: city.latitude.toString(),
-      lon: city.longitude.toString(),
-      name: city.name,
-      region: city.region,
+      lat: latitude.toString(),
+      lon: longitude.toString(),
+      name,
+      region,
       scale,
       persona,
       simulateStale: simulateStale ? 'true' : 'false',
@@ -65,7 +66,7 @@ export function useAirQualityTelemetry(params: {
       isCurrent = false;
       controller.abort();
     };
-  }, [city, scale, persona, simulateStale, refreshTrigger]);
+  }, [latitude, longitude, name, region, scale, persona, simulateStale, refreshTrigger]);
 
   const refreshAirData = useCallback(async () => {
     setIsLoadingAir(true);

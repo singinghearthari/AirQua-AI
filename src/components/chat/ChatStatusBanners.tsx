@@ -16,6 +16,8 @@ interface ChatStatusBannersProps {
   language: SupportedLanguage;
   transcript: string;
   onStopListening: () => void;
+  voiceNotice?: string | null;
+  onDismissVoiceNotice?: () => void;
 }
 
 export function ChatTypingIndicator({ persona }: { persona: HouseholdPersona }) {
@@ -58,6 +60,8 @@ export default function ChatStatusBanners({
   language,
   transcript,
   onStopListening,
+  voiceNotice,
+  onDismissVoiceNotice,
 }: Omit<ChatStatusBannersProps, 'isSending' | 'persona'>) {
   return (
     <>
@@ -113,6 +117,24 @@ export default function ChatStatusBanners({
           >
             Done
           </button>
+        </div>
+      )}
+      {voiceNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-[12px] text-on-surface flex items-center justify-between gap-3"
+        >
+          <span className="leading-relaxed">{voiceNotice}</span>
+          {onDismissVoiceNotice && (
+            <button
+              type="button"
+              onClick={onDismissVoiceNotice}
+              className="text-[11px] font-semibold text-primary hover:underline shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded px-1.5 py-0.5 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          )}
         </div>
       )}
     </>

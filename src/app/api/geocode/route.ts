@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { fetchWithTimeout, jsonError } from '@/lib/api/http';
+import { fetchWithTimeout, jsonError, jsonOk } from '@/lib/api/http';
 
 export const runtime = 'nodejs';
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 
   const cached = geocodeCache.get(cacheKey);
   if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-    return NextResponse.json({ results: cached.results });
+    return jsonOk({ results: cached.results });
   }
 
   try {
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       });
 
       geocodeCache.set(cacheKey, { results, timestamp: now });
-      return NextResponse.json({ results });
+      return jsonOk({ results });
     }
   } catch (error) {
     console.warn('Open-Meteo geocoding fetch failed, falling back to local dataset:', error);
@@ -129,5 +129,5 @@ export async function GET(request: NextRequest) {
   );
 
   geocodeCache.set(cacheKey, { results: fallbackMatches, timestamp: now });
-  return NextResponse.json({ results: fallbackMatches });
+  return jsonOk({ results: fallbackMatches });
 }

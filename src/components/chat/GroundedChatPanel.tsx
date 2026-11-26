@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronRight, HelpCircle, ShieldAlert } from 'lucide-react';
 import { useAirqua } from '@/context/AirquaContext';
 import { useAuth } from '@/context/AuthContext';
-import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import { useVoiceAssistant, detectMessageLanguage } from '@/hooks/useVoiceAssistant';
 import { useChatSession } from '@/hooks/useChatSession';
 import { RecommendedAction } from '@/lib/gemini/schemas';
 import {
@@ -89,18 +89,17 @@ export default function GroundedChatPanel() {
       voice.stopSpeaking();
       setActiveSpeakingMsgId(null);
     } else {
-      voice.speak(msg.structured?.answer || msg.text, language);
+      const spokenText = msg.structured?.answer || msg.text;
+      voice.speak(spokenText, detectMessageLanguage(spokenText));
       setActiveSpeakingMsgId(msg.id);
     }
   };
-
   const dispatchMessage = async (textToSend?: string) => {
     const target = (textToSend ?? input).trim();
     if (!target) return;
     if (!textToSend) setInput('');
     await chat.sendMessage(target);
   };
-
   const handleSaveActionItem = (action: RecommendedAction) => {
     saveAction({
       headline: `[${city.name}] ${action.title}`,
@@ -109,7 +108,6 @@ export default function GroundedChatPanel() {
     });
     setSavedActionTitles((prev) => ({ ...prev, [action.title]: true }));
   };
-
   const handleSaveFullMessageAction = (msg: MessageItem) => {
     const lines = msg.text.split('\n').filter((l) => l.trim().length > 0);
     saveAction({
@@ -214,6 +212,8 @@ export default function GroundedChatPanel() {
         language={language}
         transcript={voice.transcript}
         onStopListening={voice.stopListening}
+        voiceNotice={voice.voiceNotice}
+        onDismissVoiceNotice={voice.dismissVoiceNotice}
       />
 
       <ChatInputForm

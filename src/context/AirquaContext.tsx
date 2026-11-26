@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -23,6 +24,7 @@ import AuthModal from '@/components/shared/AuthModal';
 import RoutineDrawer from '@/components/shared/RoutineDrawer';
 import { CheckCircle2 } from 'lucide-react';
 import {
+  isSameCity,
   loadStoredPreferences,
   persistPreferences,
 } from '@/lib/storage/airquaStorage';
@@ -88,6 +90,8 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
+  const hydratedUidRef = useRef<string | null>(null);
+  const lastPersistedKeyRef = useRef<string>('');
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -95,18 +99,40 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    const uid = user?.uid;
+    if (!uid) {
+      hydratedUidRef.current = null;
+      return;
+    }
     let active = true;
 
-    getUserPreferences(user.uid)
+    getUserPreferences(uid)
       .then((remotePrefs) => {
-        if (!active || !remotePrefs) return;
-        if (remotePrefs.city) setCity(remotePrefs.city);
-        if (remotePrefs.persona) setPersona(remotePrefs.persona);
-        if (remotePrefs.scale) setScale(remotePrefs.scale);
-        if (remotePrefs.language) setLanguage(remotePrefs.language);
+        if (!active) return;
+        hydratedUidRef.current = uid;
+        if (!remotePrefs) return;
+
+        if (remotePrefs.city) {
+          const nextCity = remotePrefs.city;
+          setCity((prev) => (isSameCity(prev, nextCity) ? prev : nextCity));
+        }
+        if (remotePrefs.persona) {
+          const nextPersona = remotePrefs.persona;
+          setPersona((prev) => (prev === nextPersona ? prev : nextPersona));
+        }
+        if (remotePrefs.scale) {
+          const nextScale = remotePrefs.scale;
+          setScale((prev) => (prev === nextScale ? prev : nextScale));
+        }
+        if (remotePrefs.language) {
+          const nextLang = remotePrefs.language;
+          setLanguage((prev) => (prev === nextLang ? prev : nextLang));
+        }
       })
-      .catch((err) => console.warn('Failed to load remote preferences:', err));
+      .catch((err) => {
+        if (active) hydratedUidRef.current = uid;
+        console.warn('Failed to load remote preferences:', err);
+      });
 
     return () => {
       active = false;
@@ -114,9 +140,14 @@ export function AirquaProvider({ children }: { children: React.ReactNode }) {
   }, [user?.uid]);
 
   useEffect(() => {
-    persistPreferences({ city, persona, scale, language });
-    if (user?.uid) {
-      saveUserPreferences(user.uid, { city, persona, scale, language }).catch((err) =>
+    const prefsSnapshot = { city, persona, scale, language };
+    const serializedKey = `${user?.uid ?? 'guest'}:${JSON.stringify(prefsSnapshot)}`;
+    if (lastPersistedKeyRef.current === serializedKey) return;
+    lastPersistedKeyRef.current = serializedKey;
+
+    persistPreferences(prefsSnapshot);
+    if (user?.uid && hydratedUidRef.current === user.uid) {
+      saveUserPreferences(user.uid, prefsSnapshot).catch((err) =>
         console.warn('Failed to sync preferences to Firestore:', err)
       );
     }

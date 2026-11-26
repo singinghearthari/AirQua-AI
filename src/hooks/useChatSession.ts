@@ -5,6 +5,7 @@ import {
   saveChatConversation,
 } from '@/lib/firebase/userStore';
 import { ConsultantResponse } from '@/lib/gemini/schemas';
+import { detectMessageLanguage } from '@/lib/voice/speechUtils';
 import {
   buildWelcomeMessage,
   getNextMessageId,
@@ -167,7 +168,7 @@ export function useChatSession(params: UseChatSessionParams) {
 
         const spoken = structuredResp?.answer || data.reply;
         if (autoReadReplies && ttsSupported && spoken) {
-          speak(spoken, language);
+          speak(spoken, detectMessageLanguage(spoken));
           onBotSpeakStart(botMsg.id);
         }
         return true;

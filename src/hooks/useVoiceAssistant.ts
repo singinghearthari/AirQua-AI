@@ -8,9 +8,16 @@ import {
   SpeechRecognitionInstance,
 } from '@/lib/voice/browserSpeech';
 import { startMediaRecorderCapture } from '@/lib/voice/mediaRecorderCapture';
-import { stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
+import {
+  playEnglishGroqOrFallback,
+  resetActiveAudioElement,
+} from '@/lib/voice/groqSpeechPlayback';
+import {
+  detectMessageLanguage,
+  stripMarkdownForSpeech,
+} from '@/lib/voice/speechUtils';
 
-export { stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
+export { detectMessageLanguage, stripMarkdownForSpeech } from '@/lib/voice/speechUtils';
 
 export interface UseVoiceAssistantReturn {
   isListening: boolean;
@@ -21,6 +28,8 @@ export interface UseVoiceAssistantReturn {
   resetTranscript: () => void;
   isSpeaking: boolean;
   ttsSupported: boolean;
+  voiceNotice: string | null;
+  dismissVoiceNotice: () => void;
   speak: (text: string, lang?: SupportedLanguage) => void;
   stopSpeaking: () => void;
 }
@@ -30,8 +39,9 @@ function stopMediaStreamRef(ref: { current: MediaStream | null }): void {
 }
 
 /**
- * React hook providing bilingual (`en-IN` / `ta-IN`) Voice Input (Groq Whisper with browser
- * SpeechRecognition fallback) and Voice Readout (Groq Orpheus TTS with SpeechSynthesis fallback).
+ * React hook providing bilingual (`en-IN` / `ta-IN`) Voice Input (auto-detecting Groq Whisper with
+ * browser SpeechRecognition fallback) and content-detected Voice Readout (Groq Orpheus EN +
+ * browser `ta-IN` / `en-IN` SpeechSynthesis fallback).
  */
 export function useVoiceAssistant(
   activeLanguage: SupportedLanguage = 'en',
@@ -39,6 +49,7 @@ export function useVoiceAssistant(
 ): UseVoiceAssistantReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
 
   const [sttSupported] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -61,6 +72,7 @@ export function useVoiceAssistant(
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioUrlRef = useRef<string | null>(null);
   const onSpeechResultRef = useRef(onSpeechResult);
 
   useEffect(() => {
@@ -94,7 +106,7 @@ export function useVoiceAssistant(
       try {
         recognition?.abort();
         synth?.cancel();
-        activeAudioRef.current?.pause();
+        resetActiveAudioElement(activeAudioRef, activeAudioUrlRef);
         stopMediaStreamRef(streamRef);
       } catch {
         // Ignore teardown errors when media handles are already released
@@ -131,10 +143,7 @@ export function useVoiceAssistant(
 
   const stopSpeaking = useCallback(() => {
     try {
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
+      resetActiveAudioElement(activeAudioRef, activeAudioUrlRef);
       synthRef.current?.cancel();
     } catch {
       // Ignore cleanup exceptions
@@ -142,8 +151,11 @@ export function useVoiceAssistant(
     setIsSpeaking(false);
   }, []);
 
+  const dismissVoiceNotice = useCallback(() => setVoiceNotice(null), []);
+
   const startListening = useCallback(async () => {
     stopSpeaking();
+    setVoiceNotice(null);
     const capturedViaMediaRecorder = await startMediaRecorderCapture({
       activeLanguage,
       mediaRecorderRef,
@@ -175,63 +187,40 @@ export function useVoiceAssistant(
   const resetTranscript = useCallback(() => setTranscript(''), []);
 
   const speak = useCallback(
-    async (text: string, lang: SupportedLanguage = activeLanguage) => {
+    async (text: string) => {
       if (!text) return;
       stopSpeaking();
+      setVoiceNotice(null);
 
       const cleanText = stripMarkdownForSpeech(text);
       if (!cleanText) return;
 
-      if (lang === 'en') {
-        try {
-          const res = await fetch('/api/voice/speak', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: cleanText, language: 'en' }),
-          });
+      // Always determine TTS engine from the message script itself, independent of UI language toggle
+      const detectedLang = detectMessageLanguage(cleanText);
 
-          const contentType = res.headers.get('content-type') || '';
-          if (res.ok && contentType.includes('audio')) {
-            const blob = await res.blob();
-            const audioUrl = URL.createObjectURL(blob);
-            const audio = new Audio(audioUrl);
-            activeAudioRef.current = audio;
-
-            audio.onplay = () => setIsSpeaking(true);
-            audio.onended = () => {
-              setIsSpeaking(false);
-              URL.revokeObjectURL(audioUrl);
-              activeAudioRef.current = null;
-            };
-            audio.onerror = () => {
-              URL.revokeObjectURL(audioUrl);
-              activeAudioRef.current = null;
-              speakWithBrowserSynthesis(
-                synthRef.current,
-                cleanText,
-                lang,
-                () => setIsSpeaking(true),
-                () => setIsSpeaking(false)
-              );
-            };
-
-            await audio.play();
-            return;
-          }
-        } catch (fetchErr) {
-          console.warn('Groq speech endpoint fetch failed, falling back to browser synthesis:', fetchErr);
-        }
+      if (detectedLang === 'en') {
+        await playEnglishGroqOrFallback({
+          cleanText,
+          synth: synthRef.current,
+          activeAudioRef,
+          activeAudioUrlRef,
+          onStart: () => setIsSpeaking(true),
+          onDone: () => setIsSpeaking(false),
+          onVoiceNotice: setVoiceNotice,
+        });
+        return;
       }
 
-      speakWithBrowserSynthesis(
+      await speakWithBrowserSynthesis(
         synthRef.current,
         cleanText,
-        lang,
+        'ta',
         () => setIsSpeaking(true),
-        () => setIsSpeaking(false)
+        () => setIsSpeaking(false),
+        setVoiceNotice
       );
     },
-    [activeLanguage, stopSpeaking]
+    [stopSpeaking]
   );
 
   return {
@@ -243,6 +232,8 @@ export function useVoiceAssistant(
     resetTranscript,
     isSpeaking,
     ttsSupported,
+    voiceNotice,
+    dismissVoiceNotice,
     speak,
     stopSpeaking,
   };

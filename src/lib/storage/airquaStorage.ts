@@ -18,6 +18,18 @@ export interface StoredPreferences {
 }
 
 /**
+ * Compares two `CityPreset` objects by coordinates and display names to avoid redundant updates.
+ */
+export function isSameCity(a: CityPreset, b: CityPreset): boolean {
+  return (
+    a.latitude === b.latitude &&
+    a.longitude === b.longitude &&
+    a.name === b.name &&
+    a.region === b.region
+  );
+}
+
+/**
  * Safely reads persisted user preferences from `localStorage` with defaults.
  */
 export function loadStoredPreferences(): StoredPreferences {

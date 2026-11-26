@@ -3,6 +3,7 @@ import nextConfig from '../next.config';
 import { getGeminiClient } from '@/lib/gemini/client';
 import { getGroqClient, isQuotaOrRateLimitError } from '@/lib/ai/groqClient';
 import { GEMINI_MODEL } from '@/lib/ai/providerRouter';
+import { jsonError, jsonOk } from '@/lib/api/http';
 
 describe('Security Headers, Model Versioning & Runtime Isolation', () => {
   const originalWindow = globalThis.window;
@@ -35,6 +36,14 @@ describe('Security Headers, Model Versioning & Runtime Isolation', () => {
     expect(headerMap.get('Permissions-Policy')).toContain('camera=()');
     expect(headerMap.get('Permissions-Policy')).toContain('microphone=(self)');
     expect(headerMap.get('Permissions-Policy')).toContain('geolocation=(self)');
+  });
+
+  it('attaches X-Content-Type-Options: nosniff on API JSON helpers', () => {
+    const okRes = jsonOk({ ok: true });
+    expect(okRes.headers.get('X-Content-Type-Options')).toBe('nosniff');
+
+    const errRes = jsonError('Bad input', 400);
+    expect(errRes.headers.get('X-Content-Type-Options')).toBe('nosniff');
   });
 
   it('pins the primary Gemini model to gemini-3.5-flash-lite by default', () => {

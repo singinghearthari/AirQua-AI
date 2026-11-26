@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { routeChatCompletion } from '@/lib/ai/providerRouter';
 import { isQuotaOrRateLimitError } from '@/lib/ai/groqClient';
@@ -6,6 +6,7 @@ import {
   enforceRateLimit,
   getErrorMessage,
   jsonError,
+  jsonOk,
   parseJsonBody,
 } from '@/lib/api/http';
 import {
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       activeSimulatorSwaps,
     });
 
-    return NextResponse.json({
+    return jsonOk({
       reply: result.reply,
       structured: result.structured,
       provenance: result.provenance,
